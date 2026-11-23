@@ -13,6 +13,9 @@ Install the Flutter and Android SDKs, then run `flutter pub get` and `flutter ru
 - Keep a local SQLite journal with editable notes and photo deletion.
 - Earn first-discovery and capped repeat XP; claim daily and weekly quests; unlock two achievement milestones.
 - Browse a searchable Plantdex with locked and discovered states.
+- Start in the Plantdex, open the camera from the center navigation button, and reach Journal, Quests, and profile from the bottom bar.
+
+The interface uses a soft neutral base, vivid collection and reward accents, original plant illustrations, and small entrance animations.
 
 There is no automatic species identification, vetted 1,000-entry catalog, cloud sync, or account system in this prototype. The seed catalog is illustrative and is not approved botanical content. A user's selection is not expert verification. Do not use this app to determine edibility, safety, or medical use.
 
