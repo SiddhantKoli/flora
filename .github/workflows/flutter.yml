@@ -14,10 +14,6 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Generate Android scaffold
-        run: |
-          flutter create --platforms=android --project-name flora .
-          rm -f test/widget_test.dart
       - name: Resolve dependencies
         run: flutter pub get
       - name: Analyze
