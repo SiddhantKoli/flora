@@ -7,6 +7,8 @@ import 'data/game_rules.dart';
 import 'data/game_store.dart';
 import 'data/observation.dart';
 import 'data/species.dart';
+import 'features/camera/add_plant_camera_screen.dart';
+import 'features/camera/camera_look.dart';
 import 'ui/flora_design.dart';
 
 void main() {
@@ -54,13 +56,24 @@ class _FloraAppState extends State<FloraApp> {
 
   Future<void> scan({ImageSource source = ImageSource.camera}) async {
     try {
-      final picked = await ImagePicker()
-          .pickImage(source: source, maxWidth: 1600, imageQuality: 85);
-      if (picked == null || !mounted) return;
       final navigator = navigatorKey.currentState;
       if (navigator == null) return;
-      final result = await navigator.push<SaveResult>(MaterialPageRoute(
-          builder: (_) => ReviewPage(photo: File(picked.path))));
+      CapturedPlantPhoto? photo;
+      if (source == ImageSource.camera) {
+        photo = await navigator.push<CapturedPlantPhoto>(MaterialPageRoute(
+            builder: (_) => AddPlantCameraScreen(
+                onPhotoReady: (photo) => navigator.pop(photo))));
+      } else {
+        final picked = await ImagePicker()
+            .pickImage(source: source, maxWidth: 1600, imageQuality: 85);
+        if (picked != null) {
+          photo = CapturedPlantPhoto(originalPath: picked.path);
+        }
+      }
+      if (photo == null || !mounted) return;
+      final capturedPhoto = photo;
+      final result = await navigator.push<SaveResult>(
+          MaterialPageRoute(builder: (_) => ReviewPage(photo: capturedPhoto)));
       if (result == null || !mounted) return;
       await refresh();
       if (!mounted) return;
@@ -69,7 +82,7 @@ class _FloraAppState extends State<FloraApp> {
       } else if (result.firstDiscovery) {
         final species = speciesById(result.observation?.speciesId);
         await showModalBottomSheet<void>(
-            context: navigator.context,
+            context: navigatorKey.currentContext!,
             showDragHandle: true,
             backgroundColor: canvas,
             builder: (context) => SafeArea(
@@ -118,7 +131,8 @@ class _FloraAppState extends State<FloraApp> {
             ? 'Observation saved. +${result.xpEarned} XP'
             : 'Observation saved.');
       }
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('Scan flow failed: $error\n$stackTrace');
       if (mounted) {
         message(
             'Could not open or save the photo. Check camera access and try again.');
@@ -214,7 +228,7 @@ class _FloraAppState extends State<FloraApp> {
 
 class ReviewPage extends StatefulWidget {
   const ReviewPage({super.key, required this.photo});
-  final File photo;
+  final CapturedPlantPhoto photo;
 
   @override
   State<ReviewPage> createState() => _ReviewPageState();
@@ -222,6 +236,7 @@ class ReviewPage extends StatefulWidget {
 
 class _ReviewPageState extends State<ReviewPage> {
   String? selectedId;
+  bool showOriginal = false;
   bool saving = false;
   String search = '';
   final notes = TextEditingController();
@@ -237,7 +252,11 @@ class _ReviewPageState extends State<ReviewPage> {
     setState(() => saving = true);
     try {
       final result = await GameStore.instance.saveObservation(
-          source: widget.photo, speciesId: speciesId, notes: notes.text);
+          source: File(showOriginal
+              ? widget.photo.originalPath
+              : widget.photo.displayPath),
+          speciesId: speciesId,
+          notes: notes.text);
       if (mounted) Navigator.of(context).pop(result);
     } catch (_) {
       if (mounted) {
@@ -270,7 +289,10 @@ class _ReviewPageState extends State<ReviewPage> {
                 children: [
               ClipRRect(
                   borderRadius: BorderRadius.circular(25),
-                  child: Image.file(widget.photo,
+                  child: Image.file(
+                      File(showOriginal
+                          ? widget.photo.originalPath
+                          : widget.photo.displayPath),
                       height: 205,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -279,6 +301,15 @@ class _ReviewPageState extends State<ReviewPage> {
                           child: Center(
                               child: Text('Photo preview unavailable'))))),
               const SizedBox(height: 20),
+              if (widget.photo.hasLook) ...[
+                Text(
+                    'Look: ${lookById(widget.photo.lookId).name}. ${showOriginal ? 'The original photo is selected for saving.' : 'The edited copy is selected for saving.'}',
+                    style: const TextStyle(color: FloraPalette.muted)),
+                SwitchListTile(
+                    title: const Text('Save original photo instead'),
+                    value: showOriginal,
+                    onChanged: (value) => setState(() => showOriginal = value)),
+              ],
               const Text('YOUR FIND',
                   style: TextStyle(
                       color: forest,
@@ -294,7 +325,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       letterSpacing: -1)),
               const SizedBox(height: 6),
               const Text(
-                  'Pick a plant only if you know it. Suggestions are not available yet.',
+                  'FLORA does not identify plants yet. Choose one only if you recognize it, or save this photo as unknown.',
                   style: TextStyle(color: FloraPalette.muted, height: 1.35)),
               const SizedBox(height: 18),
               TextField(
@@ -332,11 +363,11 @@ class _ReviewPageState extends State<ReviewPage> {
                       backgroundColor: FloraPalette.lime,
                       foregroundColor: ink,
                       minimumSize: const Size.fromHeight(54)),
-                  child: Text(saving ? 'Saving…' : 'Add to my Plantdex',
+                  child: Text(saving ? 'Saving…' : 'Save plant to Plantdex',
                       style: const TextStyle(fontWeight: FontWeight.w900))),
               TextButton(
                   onPressed: saving ? null : () => save(null),
-                  child: const Text('Not sure? Save as unknown',
+                  child: const Text('Not sure? Save photo as unknown',
                       style: TextStyle(fontWeight: FontWeight.w700))),
             ])),
       ])),

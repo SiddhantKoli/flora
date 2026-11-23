@@ -45,7 +45,7 @@ class FloraNavBar extends StatelessWidget {
                 child: Center(
                     child: Semantics(
               button: true,
-              label: 'Scan a plant',
+              label: 'Add a plant',
               child: InkWell(
                 onTap: onScan,
                 customBorder: const CircleBorder(),
