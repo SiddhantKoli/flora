@@ -4,7 +4,7 @@ An Android-first Flutter prototype for collecting plant observations. It starts 
 
 ## Run
 
-Install the Flutter and Android SDKs, then run `flutter pub get` and `flutter run` on an Android device or emulator. Run `flutter test` and `flutter analyze` to check the project.
+Install the Flutter and Android SDKs, then run `flutter create --platforms=android --project-name flora .`, `flutter pub get`, and `flutter run` on an Android device or emulator. Run `flutter test` and `flutter analyze` to check the project.
 
 ## Current scope
 
