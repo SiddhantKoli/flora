@@ -9,6 +9,7 @@ coverage/
 *.iml
 .idea/
 .vscode/
+.toolchains/
 android/.gradle/
 android/local.properties
 ios/Flutter/Generated.xcconfig
