@@ -17,6 +17,13 @@ Install the Flutter and Android SDKs, then run `flutter pub get` and `flutter ru
 
 The interface uses a soft neutral base, vivid collection and reward accents, original plant illustrations, and small entrance animations.
 
+## Preview
+
+<img src="docs/screenshots/plantdex.png" alt="Plantdex" width="220" />
+<img src="docs/screenshots/journal.png" alt="Journal" width="220" />
+<img src="docs/screenshots/quests.png" alt="Quests" width="220" />
+<img src="docs/screenshots/profile.png" alt="Profile" width="220" />
+
 There is no automatic species identification, vetted 1,000-entry catalog, cloud sync, or account system in this prototype. The seed catalog is illustrative and is not approved botanical content. A user's selection is not expert verification. Do not use this app to determine edibility, safety, or medical use.
 
 Before release, validate a local model checkpoint and license, map its labels to the curated catalog, review content and imagery rights, add opt-in online verification through a secured backend, and test real smartphone photos and Android devices.
