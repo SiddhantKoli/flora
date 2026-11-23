@@ -652,7 +652,7 @@ class _PlantdexPageState extends State<PlantdexPage> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(species.commonName,
-                                                  maxLines: 1,
+                                                  maxLines: 2,
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                   style: const TextStyle(
