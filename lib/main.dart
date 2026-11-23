@@ -26,6 +26,8 @@ class FloraApp extends StatefulWidget {
 }
 
 class _FloraAppState extends State<FloraApp> {
+  final navigatorKey = GlobalKey<NavigatorState>();
+  final messengerKey = GlobalKey<ScaffoldMessengerState>();
   GameSnapshot? snapshot;
   Object? loadError;
   int tab = 0;
@@ -49,7 +51,9 @@ class _FloraAppState extends State<FloraApp> {
     try {
       final picked = await ImagePicker().pickImage(source: source, maxWidth: 1600, imageQuality: 85);
       if (picked == null || !mounted) return;
-      final result = await Navigator.of(context).push<SaveResult>(MaterialPageRoute(builder: (_) => ReviewPage(photo: File(picked.path))));
+      final navigator = navigatorKey.currentState;
+      if (navigator == null) return;
+      final result = await navigator.push<SaveResult>(MaterialPageRoute(builder: (_) => ReviewPage(photo: File(picked.path))));
       if (result == null || !mounted) return;
       await refresh();
       if (!mounted) return;
@@ -57,7 +61,7 @@ class _FloraAppState extends State<FloraApp> {
         message('This photo is already in your journal. No XP was added.');
       } else if (result.firstDiscovery) {
         final species = speciesById(result.observation?.speciesId);
-        await showDialog<void>(context: context, builder: (context) => AlertDialog(
+        await showDialog<void>(context: navigator.context, builder: (context) => AlertDialog(
           title: const Text('New discovery'),
           content: Text('${species?.commonName ?? 'Plant'} was added to your Plantdex. +${result.xpEarned} XP\n\nThis is your selection, not an expert identification.'),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Continue'))],
@@ -70,7 +74,7 @@ class _FloraAppState extends State<FloraApp> {
     }
   }
 
-  void message(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  void message(String text) => messengerKey.currentState?.showSnackBar(SnackBar(content: Text(text)));
 
   Future<void> claim(String kind) async {
     final xp = await GameStore.instance.claimQuest(kind);
@@ -83,6 +87,8 @@ class _FloraAppState extends State<FloraApp> {
     final scheme = ColorScheme.fromSeed(seedColor: forest, primary: forest, surface: canvas);
     return MaterialApp(
       title: 'FLORA',
+      navigatorKey: navigatorKey,
+      scaffoldMessengerKey: messengerKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
