@@ -946,7 +946,8 @@ class JournalPage extends StatelessWidget {
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1.7)),
         const SizedBox(height: 6),
-        Text('${state.observations.length} moments kept on this device',
+        Text(
+            '${state.observations.length} ${state.observations.length == 1 ? 'moment' : 'moments'} kept on this device',
             style: const TextStyle(color: FloraPalette.muted, fontSize: 15)),
         const SizedBox(height: 22),
         if (state.observations.isEmpty)
