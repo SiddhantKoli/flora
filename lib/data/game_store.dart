@@ -132,12 +132,13 @@ class GameStore {
     final target = kind == 'daily' ? 1 : 3;
     final reward = kind == 'daily' ? dailyQuestXp : weeklyQuestXp;
     return db.transaction((txn) async {
+      final alreadyClaimed = await txn.query('quest_claims', columns: ['key'], where: 'key = ?', whereArgs: [key], limit: 1);
+      if (alreadyClaimed.isNotEmpty) return 0;
       final count = kind == 'daily'
           ? Sqflite.firstIntValue(await txn.rawQuery('SELECT COUNT(*) FROM observations WHERE local_day = ? AND status = ?', [period, 'user_selected'])) ?? 0
           : Sqflite.firstIntValue(await txn.rawQuery('SELECT COUNT(DISTINCT species_id) FROM observations WHERE local_week = ? AND status = ?', [period, 'user_selected'])) ?? 0;
       if (count < target) return 0;
-      final added = await txn.insert('quest_claims', {'key': key, 'claimed_at': now.toUtc().toIso8601String()}, conflictAlgorithm: ConflictAlgorithm.ignore);
-      if (added == 0) return 0;
+      await txn.insert('quest_claims', {'key': key, 'claimed_at': now.toUtc().toIso8601String()});
       await txn.insert('rewards', {'key': 'quest:$key', 'xp': reward, 'created_at': now.toUtc().toIso8601String()});
       return reward;
     });
