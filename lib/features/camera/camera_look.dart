@@ -182,7 +182,7 @@ class CapturedPlantPhoto {
     this.lookId = 'natural',
   });
 
-  /// The untouched capture (or gallery pick), original aspect ratio.
+  /// The untouched in-app camera capture, original aspect ratio.
   final String originalPath;
 
   /// A copy with the look baked in, or null when no look was applied.

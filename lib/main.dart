@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 
 import 'data/game_rules.dart';
 import 'data/game_store.dart';
@@ -54,22 +53,13 @@ class _FloraAppState extends State<FloraApp> {
     }
   }
 
-  Future<void> scan({ImageSource source = ImageSource.camera}) async {
+  Future<void> scan() async {
     try {
       final navigator = navigatorKey.currentState;
       if (navigator == null) return;
-      CapturedPlantPhoto? photo;
-      if (source == ImageSource.camera) {
-        photo = await navigator.push<CapturedPlantPhoto>(MaterialPageRoute(
-            builder: (_) => AddPlantCameraScreen(
-                onPhotoReady: (photo) => navigator.pop(photo))));
-      } else {
-        final picked = await ImagePicker()
-            .pickImage(source: source, maxWidth: 1600, imageQuality: 85);
-        if (picked != null) {
-          photo = CapturedPlantPhoto(originalPath: picked.path);
-        }
-      }
+      final photo = await navigator.push<CapturedPlantPhoto>(MaterialPageRoute(
+          builder: (_) => AddPlantCameraScreen(
+              onPhotoReady: (photo) => navigator.pop(photo))));
       if (photo == null || !mounted) return;
       final capturedPhoto = photo;
       final result = await navigator.push<SaveResult>(
@@ -206,10 +196,7 @@ class _FloraAppState extends State<FloraApp> {
         }
         final state = snapshot!;
         final pages = <Widget>[
-          PlantdexPage(
-              state: state,
-              onScan: () => scan(),
-              onLibrary: () => scan(source: ImageSource.gallery)),
+          PlantdexPage(state: state, onScan: () => scan()),
           JournalPage(state: state, onChanged: refresh),
           QuestPage(state: state, onClaim: claim),
           ProfilePage(state: state),
@@ -426,14 +413,9 @@ class _ReviewPageState extends State<ReviewPage> {
 }
 
 class PlantdexPage extends StatefulWidget {
-  const PlantdexPage(
-      {super.key,
-      required this.state,
-      required this.onScan,
-      required this.onLibrary});
+  const PlantdexPage({super.key, required this.state, required this.onScan});
   final GameSnapshot state;
   final VoidCallback onScan;
-  final VoidCallback onLibrary;
 
   @override
   State<PlantdexPage> createState() => _PlantdexPageState();
@@ -480,11 +462,6 @@ class _PlantdexPageState extends State<PlantdexPage> {
                           fontSize: 10,
                           fontWeight: FontWeight.w800,
                           letterSpacing: 0.5))),
-              const SizedBox(width: 5),
-              IconButton(
-                  onPressed: widget.onLibrary,
-                  tooltip: 'Choose a photo',
-                  icon: const Icon(Icons.add_photo_alternate_outlined)),
             ]),
             const SizedBox(height: 25),
             const Text('Plantdex',

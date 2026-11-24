@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 
 import 'camera_look.dart';
 import 'look_baker.dart';
@@ -100,8 +99,8 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
       if (mounted) setState(() => _errorMessage = _messageFor(e));
     } catch (_) {
       if (mounted) {
-        setState(() => _errorMessage =
-            'The camera couldn’t start. Please try again, or choose a photo from your gallery.');
+        setState(() =>
+            _errorMessage = 'The camera couldn’t start. Please try again.');
       }
     } finally {
       _starting = false;
@@ -113,9 +112,9 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
       case 'CameraAccessDenied':
       case 'CameraAccessDeniedWithoutPrompt':
       case 'CameraAccessRestricted':
-        return 'FLORA needs camera access to add a plant photo. You can allow it in your phone’s Settings, or choose a photo from your gallery instead.';
+        return 'FLORA needs camera access to add a plant photo. Allow it in your phone’s Settings, then try again.';
       default:
-        return 'The camera couldn’t start. Please try again, or choose a photo from your gallery.';
+        return 'The camera couldn’t start. Please try again.';
     }
   }
 
@@ -170,18 +169,6 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
       _snack('Couldn’t take the photo. Please try again.');
     } finally {
       if (mounted) setState(() => _busy = false);
-    }
-  }
-
-  Future<void> _pickFromGallery() async {
-    if (_busy) return;
-    try {
-      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (picked == null || !mounted) return;
-      // Looks apply to camera captures only; gallery photos stay untouched.
-      widget.onPhotoReady(CapturedPlantPhoto(originalPath: picked.path));
-    } catch (_) {
-      _snack('Couldn’t open your gallery. Please try again.');
     }
   }
 
@@ -335,6 +322,12 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
                 _lookChips(anim),
                 const SizedBox(height: 8),
                 _controls(),
+                const SizedBox(height: 4),
+                const Text('Take a photo here to add a plant',
+                    style: TextStyle(
+                        color: CameraPalette.forestSoft,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600)),
               ],
             ),
           ),
@@ -683,12 +676,7 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _sideButton(
-            icon: Icons.photo_library_outlined,
-            label: 'Gallery',
-            semantics: 'Choose a photo from your gallery',
-            onTap: _busy ? null : _pickFromGallery,
-          ),
+          const SizedBox(width: 72),
           Semantics(
             button: true,
             enabled: ready,
