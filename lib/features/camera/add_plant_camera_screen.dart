@@ -1,20 +1,15 @@
-import 'dart:math' as math;
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'atomic_purple_camera_skin.dart';
 import 'camera_look.dart';
 import 'look_baker.dart';
-import '../../ui/flora_design.dart';
 
 class CameraPalette {
-  static const cream = FloraPalette.background;
-  static const forest = FloraPalette.forest;
-  static const forestSoft = Color(0xFF245544);
-  static const lime = FloraPalette.lime;
-  static const coral = FloraPalette.coral;
-  static const lilac = Color(0xFFE4DDF5);
+  static const forest = Color(0xFF211629);
+  static const forestSoft = Color(0xFF281936);
+  static const lime = Color(0xFFD6F451);
 }
 
 /// "Add a plant" camera. Hands the result to FLORA's existing review flow via
@@ -124,11 +119,6 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
     setState(() => _look = look);
   }
 
-  void _nextLook() {
-    final i = kCameraLooks.indexWhere((l) => l.id == _look.id);
-    _setLook(kCameraLooks[(i + 1) % kCameraLooks.length]);
-  }
-
   void _snack(String text) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
@@ -172,283 +162,135 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
     }
   }
 
-  void _showAbout() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: CameraPalette.cream,
-      showDragHandle: true,
-      builder: (_) => const Padding(
-        padding: EdgeInsets.fromLTRB(24, 4, 24, 28),
-        child: Text(
-          'Looks are creative effects that run inside FLORA, inspired by the '
-          'general feel of compact digital cameras like the Canon IXUS and '
-          'Sony Cyber-shot. They aren’t Canon or Sony modes and don’t '
-          'reproduce those cameras’ processing.\n\n'
-          'FLORA doesn’t identify plants. You choose the plant yourself on '
-          'the next step.',
-          style:
-              TextStyle(fontSize: 15, height: 1.4, color: CameraPalette.forest),
-        ),
-      ),
-    );
-  }
-
   @override
-  Widget build(BuildContext context) {
-    final reduceMotion = MediaQuery.disableAnimationsOf(context);
-    final anim =
-        reduceMotion ? Duration.zero : const Duration(milliseconds: 180);
-
-    return Scaffold(
-      backgroundColor: CameraPalette.cream,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, box) {
-            final compact = box.maxHeight < 660;
-            final reserved = compact ? 340.0 : 380.0;
-            final frameSide = math
-                .min(box.maxWidth - 28, box.maxHeight - reserved)
-                .clamp(220.0, 560.0);
-
-            return SingleChildScrollView(
-              physics: const ClampingScrollPhysics(),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: box.maxHeight),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    _header(),
-                    _cameraShell(frameSide, anim),
-                    const SizedBox(height: 16),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _header() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 16, 12),
-      child: Row(
-        children: [
-          IconButton(
-            tooltip: 'Back',
-            iconSize: 28,
-            constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-            onPressed: () => Navigator.maybePop(context),
-            icon: const Icon(Icons.arrow_back_rounded,
-                color: CameraPalette.forest),
-          ),
-          const Expanded(
-            child: Text(
-              'Add a plant',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                color: CameraPalette.forest,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _cameraShell(double side, Duration anim) {
-    return Container(
-      width: side,
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
-      decoration: BoxDecoration(
-        color: CameraPalette.forest,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: const Color(0xFF103A2D), width: 3),
-        boxShadow: const [
-          BoxShadow(
-              color: Color(0x33000000), blurRadius: 18, offset: Offset(0, 9)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-            child: Row(
-              children: [
-                _screw(),
-                const SizedBox(width: 10),
-                const Text('FLORA',
-                    style: TextStyle(
-                        color: CameraPalette.lime,
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2)),
-                const Spacer(),
-                Container(
-                    width: 7,
-                    height: 7,
-                    decoration: const BoxDecoration(
-                        color: CameraPalette.coral, shape: BoxShape.circle)),
-                const SizedBox(width: 6),
-                const Text('FIELD CAM',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontFamily: 'monospace',
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1)),
-                const SizedBox(width: 10),
-                _screw(),
-              ],
-            ),
-          ),
-          _cameraBody(side - 26),
-          const SizedBox(height: 10),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(4, 12, 4, 10),
-            decoration: BoxDecoration(
-              color: CameraPalette.lilac,
-              borderRadius: BorderRadius.circular(22),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _lookLabel(),
-                const SizedBox(height: 8),
-                _lookChips(anim),
-                const SizedBox(height: 8),
-                _controls(),
-                const SizedBox(height: 4),
-                const Text('Take a photo here to add a plant',
-                    style: TextStyle(
-                        color: CameraPalette.forestSoft,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                  7,
-                  (_) => Container(
-                      width: 12,
-                      height: 3,
-                      margin: const EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                          color: CameraPalette.forestSoft,
-                          borderRadius: BorderRadius.circular(3))))),
-        ],
-      ),
-    );
-  }
-
-  Widget _screw() => Container(
-        width: 13,
-        height: 13,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: CameraPalette.forestSoft,
-            border: Border.all(color: const Color(0xFF6C9A86), width: 1.5)),
-        child: Container(width: 7, height: 1.5, color: const Color(0xFFB0CFB8)),
+  Widget build(BuildContext context) => AtomicPurpleCameraSkin(
+        preview: _previewLayer(),
+        ready: _controller?.value.isInitialized == true && !_busy,
+        busy: _busy,
+        lookName: _look.name,
+        onCapture: _capture,
+        onFlip: _flipCamera,
+        onBack: () => Navigator.maybePop(context),
+        onSettings: _showLookSelector,
+        onSkins: _showSkinInfo,
       );
 
-  Widget _cameraBody(double side) {
-    final inner = side - 16;
-    return Semantics(
-      container: true,
-      label: 'Camera viewfinder. ${_look.name} look preview.',
-      child: Container(
-        width: side,
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0E3328),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: const Color(0xFF386A55), width: 2),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _statusDisplay(),
-            const SizedBox(height: 8),
-            SizedBox(
-              width: inner,
-              height: inner,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: _previewLayer(),
-                  ),
-                  IgnorePointer(
-                    child: CustomPaint(
-                        painter: _CornerPainter(CameraPalette.lime)),
-                  ),
-                  if (_busy)
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: Container(
-                        color: const Color(0xAA14352A),
-                        alignment: Alignment.center,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const CircularProgressIndicator(
-                                color: CameraPalette.lime),
-                            const SizedBox(height: 12),
-                            Text(
-                              _look.isNatural
-                                  ? 'Saving photo…'
-                                  : 'Applying look…',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          ],
+  Future<void> _flipCamera() async {
+    if (_busy || _starting) return;
+    final old = _controller;
+    if (old == null) return;
+    _starting = true;
+    try {
+      final cameras = await availableCameras();
+      final direction =
+          old.description.lensDirection == CameraLensDirection.back
+              ? CameraLensDirection.front
+              : CameraLensDirection.back;
+      CameraDescription? target;
+      for (final camera in cameras) {
+        if (camera.lensDirection == direction) {
+          target = camera;
+          break;
+        }
+      }
+      if (target == null) {
+        _snack('No other camera is available.');
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _controller = null);
+      await old.dispose();
+      final next = CameraController(target, ResolutionPreset.high,
+          enableAudio: false, imageFormatGroup: ImageFormatGroup.jpeg);
+      await next.initialize();
+      if (!mounted) {
+        await next.dispose();
+        return;
+      }
+      setState(() {
+        _controller = next;
+        _errorMessage = null;
+      });
+      HapticFeedback.selectionClick();
+    } on CameraException catch (error) {
+      if (mounted) setState(() => _errorMessage = _messageFor(error));
+    } catch (_) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Could not switch cameras. Try again.');
+      }
+    } finally {
+      _starting = false;
+    }
+  }
+
+  void _showLookSelector() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF211629),
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(sheetContext).height * .64,
+          child: ListView(
+              padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
+              children: [
+                const Text('Photo look',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 18)),
+                const SizedBox(height: 6),
+                const Text(
+                    'Effects are applied after capture. You can choose the original on review.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: Color(0xFFCFB8D9), fontSize: 12)),
+                const SizedBox(height: 12),
+                ...kCameraLooks.map((look) => ListTile(
+                      title: Text(look.name,
+                          style: const TextStyle(color: Colors.white)),
+                      subtitle: Text(look.traits,
+                          style: const TextStyle(color: Color(0xFFCFB8D9))),
+                      trailing: _look.id == look.id
+                          ? const Icon(Icons.check_circle,
+                              color: Color(0xFFD6F451))
+                          : null,
+                      onTap: () {
+                        _setLook(look);
+                        Navigator.pop(sheetContext);
+                      },
+                    )),
+              ]),
         ),
       ),
     );
   }
 
-  Widget _statusDisplay() {
-    const mono = TextStyle(
-      fontFamily: 'monospace',
-      fontSize: 12,
-      fontWeight: FontWeight.w700,
-      letterSpacing: 1.2,
-      color: CameraPalette.lime,
-    );
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: CameraPalette.forestSoft,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: ExcludeSemantics(
-        child: Row(
-          children: [
-            const Text('FLORA CAM', style: mono),
-            const Spacer(),
-            Text(_look.shortCode, style: mono),
-            const Spacer(),
-            const Text('FRAME 1:1', style: mono),
-          ],
+  void _showSkinInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: const Color(0xFF211629),
+      showDragHandle: true,
+      builder: (_) => const SafeArea(
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(24, 12, 24, 32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.style_rounded, size: 40, color: Color(0xFFD6F451)),
+            SizedBox(height: 12),
+            Text('Atomic Purple',
+                style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white)),
+            SizedBox(height: 8),
+            Text('Current camera style',
+                style: TextStyle(color: Color(0xFFD6F451))),
+            SizedBox(height: 14),
+            Text(
+                'Take a photo here to add a plant. FLORA does not identify plants; you choose one on the next screen.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Color(0xFFCFB8D9), height: 1.4)),
+          ]),
         ),
       ),
     );
@@ -551,236 +393,4 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
       ],
     );
   }
-
-  Widget _lookLabel() {
-    final note = _look.isNatural
-        ? 'Original colors · full photo saved'
-        : _look.hasGrain
-            ? 'Grain added on capture · choose original on review'
-            : 'Look added on capture · choose original on review';
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _look.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: CameraPalette.forest,
-                      ),
-                    ),
-                    Text(
-                      _look.isNatural
-                          ? _look.inspiredBy
-                          : 'Inspired by ${_look.inspiredBy}',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                          fontSize: 12.5, color: CameraPalette.forestSoft),
-                    ),
-                  ],
-                ),
-              ),
-              if (!_look.isNatural)
-                TextButton(
-                  style: TextButton.styleFrom(
-                    minimumSize: const Size(48, 48),
-                    foregroundColor: CameraPalette.forest,
-                  ),
-                  onPressed: () => _setLook(natural),
-                  child: Semantics(
-                    label: 'Switch back to the Natural look',
-                    excludeSemantics: true,
-                    child: const Text('Natural',
-                        style: TextStyle(fontWeight: FontWeight.w800)),
-                  ),
-                ),
-              IconButton(
-                tooltip: 'About looks',
-                constraints: const BoxConstraints(minWidth: 48, minHeight: 48),
-                onPressed: _showAbout,
-                icon: const Icon(Icons.info_outline_rounded,
-                    color: CameraPalette.forest),
-              ),
-            ],
-          ),
-          Text(
-            note,
-            style: const TextStyle(
-                fontSize: 12, height: 1.3, color: CameraPalette.forestSoft),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _lookChips(Duration anim) {
-    return SizedBox(
-      height: 56,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        itemCount: kCameraLooks.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (_, i) {
-          final look = kCameraLooks[i];
-          final selected = look.id == _look.id;
-          return Semantics(
-            button: true,
-            selected: selected,
-            label: '${look.name} look',
-            excludeSemantics: true,
-            child: InkWell(
-              borderRadius: BorderRadius.circular(24),
-              onTap: () => _setLook(look),
-              child: AnimatedContainer(
-                duration: anim,
-                constraints: const BoxConstraints(minHeight: 48, minWidth: 72),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: selected ? CameraPalette.forest : Colors.transparent,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(color: CameraPalette.forest, width: 1.5),
-                ),
-                child: Text(
-                  look.name,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: selected ? CameraPalette.lime : CameraPalette.forest,
-                  ),
-                ),
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _controls() {
-    final ready = _controller?.value.isInitialized == true && !_busy;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(width: 72),
-          Semantics(
-            button: true,
-            enabled: ready,
-            label: 'Take photo with ${_look.name} look',
-            excludeSemantics: true,
-            child: GestureDetector(
-              onTap: ready ? _capture : null,
-              child: Opacity(
-                opacity: ready ? 1 : 0.5,
-                child: Container(
-                  width: 84,
-                  height: 84,
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: CameraPalette.forest, width: 3),
-                  ),
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: CameraPalette.lime,
-                    ),
-                    child: const Icon(Icons.eco_rounded,
-                        color: CameraPalette.forest, size: 32),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          _sideButton(
-            icon: Icons.auto_awesome_outlined,
-            label: 'Next look',
-            semantics: 'Next look. Current look is ${_look.name}',
-            onTap: _nextLook,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _sideButton({
-    required IconData icon,
-    required String label,
-    required String semantics,
-    required VoidCallback? onTap,
-  }) {
-    return Semantics(
-      button: true,
-      enabled: onTap != null,
-      label: semantics,
-      excludeSemantics: true,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: Opacity(
-          opacity: onTap == null ? 0.5 : 1,
-          child: SizedBox(
-            width: 72,
-            height: 72,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 28, color: CameraPalette.forest),
-                const SizedBox(height: 4),
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: CameraPalette.forest,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CornerPainter extends CustomPainter {
-  _CornerPainter(this.color);
-  final Color color;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3
-      ..strokeCap = StrokeCap.round;
-    const inset = 12.0, len = 22.0;
-    void corner(double x, double y, double dx, double dy) {
-      canvas.drawLine(Offset(x, y), Offset(x + dx * len, y), p);
-      canvas.drawLine(Offset(x, y), Offset(x, y + dy * len), p);
-    }
-
-    corner(inset, inset, 1, 1);
-    corner(size.width - inset, inset, -1, 1);
-    corner(inset, size.height - inset, 1, -1);
-    corner(size.width - inset, size.height - inset, -1, -1);
-  }
-
-  @override
-  bool shouldRepaint(_CornerPainter old) => old.color != color;
 }
