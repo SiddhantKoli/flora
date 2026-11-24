@@ -173,7 +173,13 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
         onBack: () => Navigator.maybePop(context),
         onSettings: _showLookSelector,
         onSkins: _showSkinInfo,
+        onNextLook: _nextLook,
       );
+
+  void _nextLook() {
+    final i = kCameraLooks.indexWhere((look) => look.id == _look.id);
+    _setLook(kCameraLooks[(i + 1) % kCameraLooks.length]);
+  }
 
   Future<void> _flipCamera() async {
     if (_busy || _starting) return;
