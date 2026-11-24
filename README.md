@@ -13,7 +13,7 @@ flutter run
 
 ## What the app currently does
 
-- Opens on the Plantdex and provides a center **Add a plant** camera action. New observations require a photo taken in the in-app FLORA Field Cam; gallery imports are unavailable. The camera has a square viewfinder, five subtle digicam-inspired looks, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
+- Opens on the Plantdex and provides a center **Add a plant** camera action. New observations require a photo taken in the in-app Atomic Purple FLORA Cam; gallery imports are unavailable. The camera has a square viewfinder, front/rear switching, five subtle digicam-inspired looks in the gear menu, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
 - Shows the selected photo for review. You can search the small sample catalog and manually choose a plant, or save the photo as unknown with an optional note. When a camera look is applied, review lets you save the edited copy or the original.
 - Saves photos, notes, and observations in a local journal. You can edit notes and delete an observation.
 - Tracks first discoveries, capped repeat XP, daily and weekly quest progress and claims, and two achievement milestones.
@@ -33,11 +33,11 @@ Plant selection is user-provided. FLORA does **not** identify plants from photos
 
 The UI has Plantdex, Journal, Quests, and profile tabs with a soft neutral palette, bright accents, original simple illustrations, and small entrance animations. Settings are not implemented yet.
 
-Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
+The Atomic Purple camera shell is drawn in Flutter and approximates the supplied visual reference. Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
 
 ## Screenshots
 
-<img src="docs/screenshots/camera.png" alt="FLORA Field Cam" width="220" />
+<img src="docs/screenshots/camera.png" alt="Atomic Purple FLORA Cam" width="220" />
 <img src="docs/screenshots/plantdex.png" alt="Plantdex" width="220" />
 <img src="docs/screenshots/journal.png" alt="Journal" width="220" />
 <img src="docs/screenshots/quests.png" alt="Quests" width="220" />
