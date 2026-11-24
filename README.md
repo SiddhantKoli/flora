@@ -33,7 +33,7 @@ Plant selection is user-provided. FLORA does **not** identify plants from photos
 
 The UI has Plantdex, Journal, Quests, and profile tabs with a soft neutral palette, bright accents, original simple illustrations, and small entrance animations. Settings are not implemented yet.
 
-The Atomic Purple camera shell is drawn in Flutter and approximates the supplied visual reference. Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
+The Atomic Purple camera shell recreates the supplied reference with Flutter widgets and vector painting: layered acrylic edges, circuitry, chips, screws, raised controls, sticker, and light reflections. No screenshot is used as a camera overlay; the square center remains a live camera preview. Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
 
 ## Screenshots
 
