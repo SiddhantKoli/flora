@@ -932,68 +932,106 @@ class QuestCard extends StatelessWidget {
   }
 }
 
-class JournalPage extends StatelessWidget {
+class JournalPage extends StatefulWidget {
   const JournalPage({super.key, required this.state, required this.onChanged});
   final GameSnapshot state;
   final Future<void> Function() onChanged;
 
+  @override
+  State<JournalPage> createState() => _JournalPageState();
+}
+
+class _JournalPageState extends State<JournalPage> {
+  String search = '';
+  bool unknownOnly = false;
+
   Future<void> openObservation(
       BuildContext context, Observation observation) async {
     await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) =>
-            ObservationDetail(observation: observation, onChanged: onChanged)));
-    await onChanged();
+        builder: (_) => ObservationDetail(
+            observation: observation, onChanged: widget.onChanged)));
+    await widget.onChanged();
   }
 
   @override
-  Widget build(BuildContext context) =>
-      ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 30), children: [
-        const Text('Field notes.',
-            style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1.7)),
-        const SizedBox(height: 6),
-        Text(
-            '${state.observations.length} ${state.observations.length == 1 ? 'moment' : 'moments'} kept on this device',
-            style: const TextStyle(color: FloraPalette.muted, fontSize: 15)),
-        const SizedBox(height: 22),
-        if (state.observations.isEmpty)
-          Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                  color: FloraPalette.blue,
-                  borderRadius: BorderRadius.circular(26)),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                        child: PlantIllustration(
-                            species: seedSpecies[2], scale: 1.1)),
-                    const SizedBox(height: 8),
-                    const Text('Every find has a story.',
-                        style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.7)),
-                    const SizedBox(height: 6),
-                    const Text(
-                        'Your photos and little details will live here. Start with a plant that catches your eye.',
-                        style: TextStyle(fontSize: 14, height: 1.4)),
-                  ])),
-        if (state.observations.isNotEmpty) ...[
-          const Text('YOUR MOMENTS',
+  Widget build(BuildContext context) {
+    final observations = widget.state.observations.where((observation) {
+      if (unknownOnly && observation.speciesId != null) return false;
+      final species = speciesById(observation.speciesId);
+      final text =
+          '${species?.commonName ?? 'Unknown plant'} ${species?.scientificName ?? ''} ${observation.notes}'
+              .toLowerCase();
+      return text.contains(search.trim().toLowerCase());
+    }).toList();
+    return ListView(
+        padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
+        children: [
+          const Text('Field notes.',
               style: TextStyle(
-                  color: FloraPalette.muted,
-                  fontSize: 11,
+                  fontSize: 38,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1)),
-          const SizedBox(height: 12),
-          ...state.observations.map((observation) => ObservationTile(
-              observation: observation,
-              onTap: () => openObservation(context, observation))),
-        ],
-      ]);
+                  letterSpacing: -1.7)),
+          const SizedBox(height: 6),
+          Text(
+              '${widget.state.observations.length} ${widget.state.observations.length == 1 ? 'moment' : 'moments'} kept on this device',
+              style: const TextStyle(color: FloraPalette.muted, fontSize: 15)),
+          const SizedBox(height: 22),
+          if (widget.state.observations.isEmpty)
+            Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                    color: FloraPalette.blue,
+                    borderRadius: BorderRadius.circular(26)),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Center(
+                          child: PlantIllustration(
+                              species: seedSpecies[2], scale: 1.1)),
+                      const SizedBox(height: 8),
+                      const Text('Every find has a story.',
+                          style: TextStyle(
+                              fontSize: 25,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.7)),
+                      const SizedBox(height: 6),
+                      const Text(
+                          'Your photos and little details will live here. Start with a plant that catches your eye.',
+                          style: TextStyle(fontSize: 14, height: 1.4)),
+                    ])),
+          if (widget.state.observations.isNotEmpty) ...[
+            TextField(
+                onChanged: (value) => setState(() => search = value),
+                decoration: const InputDecoration(
+                    prefixIcon: Icon(Icons.search),
+                    labelText: 'Search your journal',
+                    hintText: 'Plant name or note')),
+            const SizedBox(height: 10),
+            Align(
+                alignment: Alignment.centerLeft,
+                child: FilterChip(
+                    label: const Text('Unknown plants'),
+                    selected: unknownOnly,
+                    onSelected: (value) =>
+                        setState(() => unknownOnly = value))),
+            const SizedBox(height: 16),
+            const Text('YOUR MOMENTS',
+                style: TextStyle(
+                    color: FloraPalette.muted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1)),
+            const SizedBox(height: 12),
+            if (observations.isEmpty)
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 28),
+                  child: Center(child: Text('No moments match your search.'))),
+            ...observations.map((observation) => ObservationTile(
+                observation: observation,
+                onTap: () => openObservation(context, observation))),
+          ],
+        ]);
+  }
 }
 
 class ObservationTile extends StatelessWidget {
@@ -1109,16 +1147,48 @@ class _ObservationDetailState extends State<ObservationDetail> {
                   tooltip: 'Delete observation')
             ]),
         body: ListView(padding: const EdgeInsets.all(20), children: [
-          ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: Image.file(File(widget.observation.imagePath),
-                  height: 260,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(
-                      height: 260,
-                      child: Center(child: Text('Photo unavailable'))))),
+          Semantics(
+              button: true,
+              label: 'Open full photo',
+              child: InkWell(
+                  onTap: () => showDialog<void>(
+                      context: context,
+                      builder: (dialogContext) => Dialog.fullscreen(
+                          backgroundColor: ink,
+                          child: SafeArea(
+                              child: Stack(children: [
+                            Center(
+                                child: InteractiveViewer(
+                                    minScale: 1,
+                                    maxScale: 4,
+                                    child: Image.file(
+                                        File(widget.observation.imagePath),
+                                        fit: BoxFit.contain))),
+                            Positioned(
+                                top: 8,
+                                right: 8,
+                                child: IconButton(
+                                    onPressed: () =>
+                                        Navigator.pop(dialogContext),
+                                    tooltip: 'Close photo',
+                                    icon: const Icon(Icons.close,
+                                        color: Colors.white)))
+                          ])))),
+                  child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: Image.file(File(widget.observation.imagePath),
+                          height: 260,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox(
+                              height: 260,
+                              child:
+                                  Center(child: Text('Photo unavailable'))))))),
           const SizedBox(height: 21),
+          Text(
+              'Observed ${widget.observation.createdAt.toLocal().day}/${widget.observation.createdAt.toLocal().month}/${widget.observation.createdAt.toLocal().year}  ·  Tap photo to inspect',
+              style: const TextStyle(color: FloraPalette.muted, fontSize: 13)),
+          const SizedBox(height: 12),
           Text(species == null ? 'SAVED AS UNKNOWN' : 'SELECTED BY YOU',
               style: const TextStyle(
                   color: forest,

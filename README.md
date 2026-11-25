@@ -15,7 +15,7 @@ flutter run
 
 - Opens on the Plantdex and provides a center **Add a plant** camera action. New observations require a photo taken in the in-app Atomic Purple FLORA Cam; gallery imports are unavailable. The camera has a square viewfinder, front/rear switching, five subtle digicam-inspired looks in the gear menu, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
 - Shows the selected photo for review. You can search the small sample catalog and manually choose a plant, or save the photo as unknown with an optional note. When a camera look is applied, review lets you save the edited copy or the original.
-- Saves photos, notes, and observations in a local journal. You can edit notes and delete an observation.
+- Saves photos, notes, and observations in a local journal. You can search plant names and notes, filter unknown plants, inspect a photo full-screen with zoom, edit notes, and delete an observation.
 - Tracks first discoveries, capped repeat XP, daily and weekly quest progress and claims, and two achievement milestones.
 - Shows a searchable Plantdex with collected and undiscovered sample entries, plus profile stats and badges.
 - Uses an adaptive Android launcher icon and a custom launch screen.
