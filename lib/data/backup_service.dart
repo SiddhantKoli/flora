@@ -62,7 +62,11 @@ class BackupService {
       'achievements': await db.query('achievements'),
       'quest_claims': await db.query('quest_claims'),
     };
-    return Uint8List.fromList(utf8.encode(jsonEncode(backup)));
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(backup)));
+    if (bytes.length > 200 * 1024 * 1024) {
+      throw StateError('This journal is too large for a single backup file.');
+    }
+    return bytes;
   }
 
   Future<Map<String, String>> _encodePhoto(String path) async {

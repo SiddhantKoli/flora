@@ -1685,9 +1685,7 @@ class ProfilePage extends StatelessWidget {
         const SizedBox(height: 16),
         OutlinedButton.icon(
             onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => BackupPage(
-                    onRestored: onRestored,
-                    currentCount: state.observations.length))),
+                builder: (_) => BackupPage(onRestored: onRestored))),
             icon: const Icon(Icons.save_alt_rounded),
             label: const Text('Export or restore journal')),
       ]);

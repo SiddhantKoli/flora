@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/backup_service.dart';
+import '../../data/game_store.dart';
 import '../../ui/flora_design.dart';
 
 class BackupPage extends StatefulWidget {
-  const BackupPage(
-      {super.key, required this.onRestored, required this.currentCount});
+  const BackupPage({super.key, required this.onRestored});
   final Future<void> Function() onRestored;
-  final int currentCount;
 
   @override
   State<BackupPage> createState() => _BackupPageState();
@@ -49,12 +48,15 @@ class _BackupPageState extends State<BackupPage> {
       final bytes = await channel.invokeMethod<Uint8List>('open');
       if (bytes == null || !mounted) return;
       final preview = BackupService.instance.inspect(bytes);
+      final currentCount =
+          (await GameStore.instance.snapshot()).observations.length;
+      if (!mounted) return;
       final confirmed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
                 title: const Text('Replace your current journal?'),
                 content: Text(
-                    'This backup has ${preview.observationCount} entries and ${preview.photoCount} photos. Your ${widget.currentCount} current entries, photos, and progress will be replaced. Export your current journal first if you want to keep it.'),
+                    'This backup has ${preview.observationCount} entries and ${preview.photoCount} photos. Your $currentCount current entries, photos, and progress will be replaced. Export your current journal first if you want to keep it.'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialogContext, false),
