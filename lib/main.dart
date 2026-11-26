@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 
 import 'data/game_rules.dart';
 import 'data/game_store.dart';
@@ -32,6 +34,7 @@ class _FloraAppState extends State<FloraApp> {
   GameSnapshot? snapshot;
   Object? loadError;
   int tab = 0;
+  bool firstRunChecked = false;
 
   @override
   void initState() {
@@ -47,10 +50,74 @@ class _FloraAppState extends State<FloraApp> {
           snapshot = next;
           loadError = null;
         });
+        if (!firstRunChecked) {
+          firstRunChecked = true;
+          showFirstRunGuide();
+        }
       }
     } catch (error) {
       if (mounted) setState(() => loadError = error);
     }
+  }
+
+  Future<void> showFirstRunGuide() async {
+    final directory = await getApplicationSupportDirectory();
+    await directory.create(recursive: true);
+    final marker = File(p.join(directory.path, 'first_run_seen'));
+    if (await marker.exists()) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final context = navigatorKey.currentContext;
+      if (!mounted || context == null) return;
+      final start = await showModalBottomSheet<bool>(
+          context: context,
+          isScrollControlled: true,
+          showDragHandle: true,
+          backgroundColor: canvas,
+          builder: (sheetContext) => SafeArea(
+              child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
+                  child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Welcome to FLORA',
+                            style: TextStyle(
+                                fontSize: 30, fontWeight: FontWeight.w900)),
+                        const SizedBox(height: 12),
+                        const Text(
+                            'A little field journal for plants you notice.',
+                            style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 20),
+                        const ListTile(
+                            leading: Icon(Icons.photo_camera_outlined),
+                            title: Text('Take a photo in FLORA'),
+                            subtitle: Text(
+                                'Photos are captured in the app; gallery imports are unavailable.')),
+                        const ListTile(
+                            leading: Icon(Icons.edit_outlined),
+                            title: Text('Choose a name, or Unknown'),
+                            subtitle: Text(
+                                'FLORA does not identify plants. You can correct a name later.')),
+                        const ListTile(
+                            leading: Icon(Icons.phone_android_outlined),
+                            title: Text('Keep your finds on this phone'),
+                            subtitle: Text(
+                                'Photos and progress stay on your device. Export a backup before changing phones.')),
+                        const SizedBox(height: 18),
+                        FilledButton(
+                            onPressed: () => Navigator.pop(sheetContext, true),
+                            style: FilledButton.styleFrom(
+                                minimumSize: const Size.fromHeight(52)),
+                            child: const Text('Add my first plant')),
+                        Center(
+                            child: TextButton(
+                                onPressed: () =>
+                                    Navigator.pop(sheetContext, false),
+                                child: const Text('Explore first'))),
+                      ]))));
+      await marker.writeAsString('1');
+      if (start == true && mounted) await scan();
+    });
   }
 
   Future<void> scan() async {
@@ -107,19 +174,69 @@ class _FloraAppState extends State<FloraApp> {
                               'Added to your Plantdex. This is your selection, not an expert identification.',
                               style: TextStyle(
                                   color: FloraPalette.muted, height: 1.4)),
+                          const SizedBox(height: 8),
+                          Text(
+                              '${snapshot?.unlockedIds.length ?? 0} plants in your Plantdex',
+                              style:
+                                  const TextStyle(color: FloraPalette.muted)),
                           const SizedBox(height: 20),
                           FilledButton(
-                              onPressed: () => Navigator.pop(context),
+                              onPressed: () {
+                                Navigator.pop(context);
+                                setState(() => tab = 1);
+                              },
                               style: FilledButton.styleFrom(
                                   minimumSize: const Size.fromHeight(52)),
-                              child: const Text('Keep exploring',
+                              child: const Text('View in Journal',
                                   style:
                                       TextStyle(fontWeight: FontWeight.w800))),
+                          Center(
+                              child: TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Keep exploring'))),
                         ]))));
       } else {
-        message(result.xpEarned > 0
-            ? 'Observation saved. +${result.xpEarned} XP'
-            : 'Observation saved.');
+        await showModalBottomSheet<void>(
+            context: navigatorKey.currentContext!,
+            showDragHandle: true,
+            backgroundColor: canvas,
+            builder: (context) => SafeArea(
+                child: Padding(
+                    padding: const EdgeInsets.fromLTRB(22, 8, 22, 28),
+                    child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                              result.observation?.speciesId == null
+                                  ? 'Saved as Unknown'
+                                  : 'Added to your Journal',
+                              style: const TextStyle(
+                                  fontSize: 29, fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 8),
+                          Text(
+                              result.xpEarned > 0
+                                  ? '+${result.xpEarned} XP · ${snapshot?.observations.length ?? 0} moments saved'
+                                  : '${snapshot?.observations.length ?? 0} moments saved',
+                              style:
+                                  const TextStyle(color: FloraPalette.muted)),
+                          const SizedBox(height: 8),
+                          const Text(
+                              'You can add more photos, edit the note, or correct the plant name later.'),
+                          const SizedBox(height: 20),
+                          FilledButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                setState(() => tab = 1);
+                              },
+                              style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(52)),
+                              child: const Text('View in Journal')),
+                          Center(
+                              child: TextButton(
+                                  onPressed: () => Navigator.pop(context),
+                                  child: const Text('Keep exploring'))),
+                        ]))));
       }
     } catch (error, stackTrace) {
       debugPrint('Scan flow failed: $error\n$stackTrace');
@@ -197,7 +314,7 @@ class _FloraAppState extends State<FloraApp> {
         final state = snapshot!;
         final pages = <Widget>[
           PlantdexPage(state: state, onScan: () => scan()),
-          JournalPage(state: state, onChanged: refresh),
+          JournalPage(state: state, onChanged: refresh, onScan: scan),
           QuestPage(state: state, onClaim: claim),
           ProfilePage(state: state),
         ];
@@ -933,9 +1050,14 @@ class QuestCard extends StatelessWidget {
 }
 
 class JournalPage extends StatefulWidget {
-  const JournalPage({super.key, required this.state, required this.onChanged});
+  const JournalPage(
+      {super.key,
+      required this.state,
+      required this.onChanged,
+      required this.onScan});
   final GameSnapshot state;
   final Future<void> Function() onChanged;
+  final Future<void> Function() onScan;
 
   @override
   State<JournalPage> createState() => _JournalPageState();
@@ -998,6 +1120,11 @@ class _JournalPageState extends State<JournalPage> {
                       const Text(
                           'Your photos and little details will live here. Start with a plant that catches your eye.',
                           style: TextStyle(fontSize: 14, height: 1.4)),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(
+                          onPressed: widget.onScan,
+                          icon: const Icon(Icons.add_a_photo_outlined),
+                          label: const Text('Add your first plant')),
                     ])),
           if (widget.state.observations.isNotEmpty) ...[
             TextField(
