@@ -340,11 +340,19 @@ class ReviewPage extends StatefulWidget {
 }
 
 class _ReviewPageState extends State<ReviewPage> {
+  late CapturedPlantPhoto photo;
   String? selectedId;
   bool showOriginal = false;
   bool saving = false;
+  String? saveError;
   String search = '';
   final notes = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    photo = widget.photo;
+  }
 
   @override
   void dispose() {
@@ -354,24 +362,47 @@ class _ReviewPageState extends State<ReviewPage> {
 
   Future<void> save(String? speciesId) async {
     if (saving) return;
-    setState(() => saving = true);
+    setState(() {
+      saving = true;
+      saveError = null;
+    });
     try {
       final result = await GameStore.instance.saveObservation(
-          source: File(showOriginal
-              ? widget.photo.originalPath
-              : widget.photo.displayPath),
+          source: File(showOriginal ? photo.originalPath : photo.displayPath),
           speciesId: speciesId,
           notes: notes.text);
+      if (result.duplicateImage) {
+        if (mounted) {
+          setState(() => saveError =
+              'This photo is already in your journal. Retake it to save a new observation.');
+        }
+        return;
+      }
       if (mounted) Navigator.of(context).pop(result);
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content:
-                Text('Could not save this observation. Try another photo.')));
+        setState(() => saveError = error is FileSystemException
+            ? 'The photo could not be read or saved. Retake it, then try again.'
+            : 'Could not save this observation. Your review is still here; try again or retake the photo.');
       }
     } finally {
       if (mounted) setState(() => saving = false);
     }
+  }
+
+  Future<void> retake() async {
+    final next = await Navigator.of(context).push<CapturedPlantPhoto>(
+        MaterialPageRoute(
+            builder: (cameraContext) => AddPlantCameraScreen(
+                initialLookId: photo.lookId,
+                onPhotoReady: (captured) =>
+                    Navigator.pop(cameraContext, captured))));
+    if (next == null || !mounted) return;
+    setState(() {
+      photo = next;
+      showOriginal = false;
+      saveError = null;
+    });
   }
 
   @override
@@ -396,8 +427,8 @@ class _ReviewPageState extends State<ReviewPage> {
                   borderRadius: BorderRadius.circular(25),
                   child: Image.file(
                       File(showOriginal
-                          ? widget.photo.originalPath
-                          : widget.photo.displayPath),
+                          ? photo.originalPath
+                          : photo.displayPath),
                       height: 205,
                       width: double.infinity,
                       fit: BoxFit.cover,
@@ -406,9 +437,27 @@ class _ReviewPageState extends State<ReviewPage> {
                           child: Center(
                               child: Text('Photo preview unavailable'))))),
               const SizedBox(height: 20),
-              if (widget.photo.hasLook) ...[
+              OutlinedButton.icon(
+                  onPressed: saving ? null : retake,
+                  icon: const Icon(Icons.camera_alt_outlined),
+                  label: const Text('Retake photo')),
+              const SizedBox(height: 12),
+              if (saveError != null) ...[
+                Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                        color: FloraPalette.coral,
+                        borderRadius: BorderRadius.circular(14)),
+                    child: Row(children: [
+                      const Icon(Icons.info_outline),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(saveError!)),
+                    ])),
+                const SizedBox(height: 16),
+              ],
+              if (photo.hasLook) ...[
                 Text(
-                    'Look: ${lookById(widget.photo.lookId).name}. ${showOriginal ? 'The original photo is selected for saving.' : 'The edited copy is selected for saving.'}',
+                    'Look: ${lookById(photo.lookId).name}. ${showOriginal ? 'The original photo is selected for saving.' : 'The edited copy is selected for saving.'}',
                     style: const TextStyle(color: FloraPalette.muted)),
                 SwitchListTile(
                     title: const Text('Save original photo instead'),
