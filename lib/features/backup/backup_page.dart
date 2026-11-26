@@ -68,8 +68,12 @@ class _BackupPageState extends State<BackupPage> {
               ));
       if (confirmed != true) return;
       await BackupService.instance.restore(bytes);
-      await widget.onRestored();
-      message('Journal restored from backup.');
+      try {
+        await widget.onRestored();
+        message('Journal restored from backup.');
+      } catch (_) {
+        message('Backup restored. Reopen FLORA to refresh the screen.');
+      }
     } on FormatException catch (error) {
       message(error.message);
     } catch (_) {
