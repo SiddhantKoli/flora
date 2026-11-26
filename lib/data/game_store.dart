@@ -356,13 +356,23 @@ class GameStore {
       if (oldId == speciesId) return;
       if (oldId != null) {
         final remaining = await txn.query('observations',
-            columns: ['id'],
+            columns: ['id', 'created_at'],
             where: 'species_id = ?',
             whereArgs: [oldId],
+            orderBy: 'created_at ASC',
             limit: 1);
         if (remaining.isEmpty) {
           await txn.delete('discoveries',
               where: 'species_id = ?', whereArgs: [oldId]);
+        } else {
+          await txn.update(
+              'discoveries',
+              {
+                'first_observation_id': remaining.first['id'],
+                'discovered_at': remaining.first['created_at'],
+              },
+              where: 'species_id = ? AND first_observation_id = ?',
+              whereArgs: [oldId, id]);
         }
       }
       if (speciesId != null) {
@@ -374,6 +384,20 @@ class GameStore {
               'discovered_at': DateTime.now().toUtc().toIso8601String(),
             },
             conflictAlgorithm: ConflictAlgorithm.ignore);
+        final count = Sqflite.firstIntValue(
+                await txn.rawQuery('SELECT COUNT(*) FROM discoveries')) ??
+            0;
+        final now = DateTime.now().toUtc().toIso8601String();
+        if (count >= 1) {
+          await txn.insert(
+              'achievements', {'id': 'first_discovery', 'unlocked_at': now},
+              conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
+        if (count >= 5) {
+          await txn.insert(
+              'achievements', {'id': 'five_species', 'unlocked_at': now},
+              conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
       }
     });
   }
