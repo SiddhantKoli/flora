@@ -1099,6 +1099,8 @@ class ObservationDetail extends StatefulWidget {
 class _ObservationDetailState extends State<ObservationDetail> {
   late final TextEditingController notes;
   late String selectedSpeciesId;
+  late List<String> imagePaths;
+  late String selectedPhotoPath;
   bool saving = false;
 
   @override
@@ -1106,12 +1108,69 @@ class _ObservationDetailState extends State<ObservationDetail> {
     super.initState();
     notes = TextEditingController(text: widget.observation.notes);
     selectedSpeciesId = widget.observation.speciesId ?? '';
+    imagePaths = widget.observation.allImagePaths;
+    selectedPhotoPath = imagePaths.first;
   }
 
   @override
   void dispose() {
     notes.dispose();
     super.dispose();
+  }
+
+  Future<void> addPhoto() async {
+    final photo = await Navigator.of(context).push<CapturedPlantPhoto>(
+        MaterialPageRoute(
+            builder: (cameraContext) => AddPlantCameraScreen(
+                onPhotoReady: (photo) => Navigator.pop(cameraContext, photo))));
+    if (photo == null || !mounted) return;
+    final selectedPath = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+              title: const Text('Add this photo?'),
+              content: Column(mainAxisSize: MainAxisSize.min, children: [
+                Image.file(File(photo.displayPath),
+                    height: 190, fit: BoxFit.contain),
+                const SizedBox(height: 10),
+                const Text('This photo will join the same plant entry.'),
+              ]),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: const Text('Cancel')),
+                if (photo.hasLook)
+                  TextButton(
+                      onPressed: () =>
+                          Navigator.pop(dialogContext, photo.originalPath),
+                      child: const Text('Use original')),
+                FilledButton(
+                    onPressed: () =>
+                        Navigator.pop(dialogContext, photo.displayPath),
+                    child: const Text('Add photo')),
+              ],
+            ));
+    if (selectedPath == null || !mounted) return;
+    try {
+      final path = await GameStore.instance
+          .addObservationPhoto(widget.observation.id, File(selectedPath));
+      if (!mounted) return;
+      setState(() {
+        imagePaths = [...imagePaths, path];
+        selectedPhotoPath = path;
+      });
+      await widget.onChanged();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Photo added to this plant.')));
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(error is StateError
+                ? error.message
+                : 'Could not add this photo. Please try again.')));
+      }
+    }
   }
 
   Future<void> delete() async {
@@ -1164,8 +1223,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
                                 child: InteractiveViewer(
                                     minScale: 1,
                                     maxScale: 4,
-                                    child: Image.file(
-                                        File(widget.observation.imagePath),
+                                    child: Image.file(File(selectedPhotoPath),
                                         fit: BoxFit.contain))),
                             Positioned(
                                 top: 8,
@@ -1179,7 +1237,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
                           ])))),
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(24),
-                      child: Image.file(File(widget.observation.imagePath),
+                      child: Image.file(File(selectedPhotoPath),
                           height: 260,
                           width: double.infinity,
                           fit: BoxFit.cover,
@@ -1188,6 +1246,39 @@ class _ObservationDetailState extends State<ObservationDetail> {
                               child:
                                   Center(child: Text('Photo unavailable'))))))),
           const SizedBox(height: 21),
+          if (imagePaths.length > 1) ...[
+            SizedBox(
+                height: 78,
+                child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: imagePaths.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 8),
+                    itemBuilder: (context, index) => InkWell(
+                        onTap: () => setState(
+                            () => selectedPhotoPath = imagePaths[index]),
+                        child: Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color:
+                                        selectedPhotoPath == imagePaths[index]
+                                            ? forest
+                                            : Colors.transparent,
+                                    width: 2)),
+                            child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.file(File(imagePaths[index]),
+                                    width: 66,
+                                    height: 66,
+                                    fit: BoxFit.cover)))))),
+            const SizedBox(height: 10),
+          ],
+          OutlinedButton.icon(
+              onPressed: addPhoto,
+              icon: const Icon(Icons.add_a_photo_outlined),
+              label: Text('Add another photo (${imagePaths.length})')),
+          const SizedBox(height: 10),
           Text(
               'Observed ${widget.observation.createdAt.toLocal().day}/${widget.observation.createdAt.toLocal().month}/${widget.observation.createdAt.toLocal().year}  ·  Tap photo to inspect',
               style: const TextStyle(color: FloraPalette.muted, fontSize: 13)),

@@ -51,7 +51,7 @@ class GameStore {
     if (_database != null) return _database!;
     final file = p.join(await getDatabasesPath(), 'flora.db');
     return _database =
-        await openDatabase(file, version: 1, onCreate: (db, _) async {
+        await openDatabase(file, version: 2, onCreate: (db, _) async {
       await db.execute(
           'CREATE TABLE observations (id TEXT PRIMARY KEY, image_path TEXT NOT NULL, image_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, local_day TEXT NOT NULL, local_week TEXT NOT NULL, species_id TEXT, status TEXT NOT NULL, notes TEXT NOT NULL DEFAULT "", reward_xp INTEGER NOT NULL DEFAULT 0)');
       await db.execute(
@@ -62,6 +62,13 @@ class GameStore {
           'CREATE TABLE achievements (id TEXT PRIMARY KEY, unlocked_at TEXT NOT NULL)');
       await db.execute(
           'CREATE TABLE quest_claims (key TEXT PRIMARY KEY, claimed_at TEXT NOT NULL)');
+      await db.execute(
+          'CREATE TABLE observation_photos (id TEXT PRIMARY KEY, observation_id TEXT NOT NULL, image_path TEXT NOT NULL, image_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL)');
+    }, onUpgrade: (db, oldVersion, newVersion) async {
+      if (oldVersion < 2) {
+        await db.execute(
+            'CREATE TABLE observation_photos (id TEXT PRIMARY KEY, observation_id TEXT NOT NULL, image_path TEXT NOT NULL, image_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL)');
+      }
     });
   }
 
@@ -78,6 +85,14 @@ class GameStore {
     final db = await database;
     final now = DateTime.now();
     final rows = await db.query('observations', orderBy: 'created_at DESC');
+    final photoRows =
+        await db.query('observation_photos', orderBy: 'created_at ASC');
+    final photosByObservation = <String, List<String>>{};
+    for (final photo in photoRows) {
+      photosByObservation
+          .putIfAbsent(photo['observation_id'] as String, () => [])
+          .add(photo['image_path'] as String);
+    }
     final discoveries = await db.query('discoveries', columns: ['species_id']);
     final rewards =
         await db.rawQuery('SELECT COALESCE(SUM(xp), 0) AS total FROM rewards');
@@ -93,7 +108,13 @@ class GameStore {
         whereArgs: ['daily:${_day(now)}', 'weekly:${_week(now)}']);
     final claimKeys = claims.map((row) => row['key'] as String).toSet();
     return GameSnapshot(
-      observations: rows.map(Observation.fromMap).toList(),
+      observations: rows
+          .map((row) => Observation.fromMap({
+                ...row,
+                'extra_image_paths':
+                    photosByObservation[row['id']] ?? <String>[],
+              }))
+          .toList(),
       unlockedIds:
           discoveries.map((row) => row['species_id'] as String).toSet(),
       xp: (rewards.first['total'] as int?) ?? 0,
@@ -115,7 +136,9 @@ class GameStore {
     final db = await database;
     final existing = await db.query('observations',
         columns: ['id'], where: 'image_hash = ?', whereArgs: [hash], limit: 1);
-    if (existing.isNotEmpty)
+    final attached = await db.query('observation_photos',
+        columns: ['id'], where: 'image_hash = ?', whereArgs: [hash], limit: 1);
+    if (existing.isNotEmpty || attached.isNotEmpty)
       return const SaveResult(
           observation: null,
           xpEarned: 0,
@@ -252,6 +275,43 @@ class GameStore {
         where: 'id = ?', whereArgs: [id]);
   }
 
+  Future<String> addObservationPhoto(String observationId, File source) async {
+    final bytes = await source.readAsBytes();
+    if (bytes.isEmpty) throw StateError('The captured photo is empty.');
+    final hash = sha256.convert(bytes).toString();
+    final db = await database;
+    final owner = await db.query('observations',
+        columns: ['id'], where: 'id = ?', whereArgs: [observationId], limit: 1);
+    if (owner.isEmpty) throw StateError('Observation no longer exists.');
+    final matchingPrimary = await db.query('observations',
+        columns: ['id'], where: 'image_hash = ?', whereArgs: [hash], limit: 1);
+    final matchingExtra = await db.query('observation_photos',
+        columns: ['id'], where: 'image_hash = ?', whereArgs: [hash], limit: 1);
+    if (matchingPrimary.isNotEmpty || matchingExtra.isNotEmpty) {
+      throw StateError('This photo is already in your journal.');
+    }
+    final id = const Uuid().v4();
+    final directory = Directory(p.join(
+        (await getApplicationDocumentsDirectory()).path, 'observations'));
+    await directory.create(recursive: true);
+    final file = File(
+        p.join(directory.path, '$id${p.extension(source.path).toLowerCase()}'));
+    await file.writeAsBytes(bytes, flush: true);
+    try {
+      await db.insert('observation_photos', {
+        'id': id,
+        'observation_id': observationId,
+        'image_path': file.path,
+        'image_hash': hash,
+        'created_at': DateTime.now().toUtc().toIso8601String(),
+      });
+    } catch (_) {
+      if (await file.exists()) await file.delete();
+      rethrow;
+    }
+    return file.path;
+  }
+
   /// Correct a manual label without granting another discovery reward.
   /// Previously earned XP stays earned; the Plantdex follows current labels.
   Future<void> updateObservation(String id,
@@ -301,9 +361,20 @@ class GameStore {
 
   Future<void> deleteObservation(Observation observation) async {
     final db = await database;
+    final photos = await db.query('observation_photos',
+        columns: ['image_path'],
+        where: 'observation_id = ?',
+        whereArgs: [observation.id]);
+    await db.delete('observation_photos',
+        where: 'observation_id = ?', whereArgs: [observation.id]);
     await db
         .delete('observations', where: 'id = ?', whereArgs: [observation.id]);
-    final image = File(observation.imagePath);
-    if (await image.exists()) await image.delete();
+    for (final path in [
+      observation.imagePath,
+      ...photos.map((row) => row['image_path'] as String)
+    ]) {
+      final image = File(path);
+      if (await image.exists()) await image.delete();
+    }
   }
 }
