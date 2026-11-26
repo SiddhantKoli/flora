@@ -182,10 +182,8 @@ class _FloraAppState extends State<FloraApp> {
                                   const TextStyle(color: FloraPalette.muted)),
                           const SizedBox(height: 20),
                           FilledButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                setState(() => tab = 1);
-                              },
+                              onPressed: () =>
+                                  viewSavedEntry(context, result.observation),
                               style: FilledButton.styleFrom(
                                   minimumSize: const Size.fromHeight(52)),
                               child: const Text('View in Journal',
@@ -226,10 +224,8 @@ class _FloraAppState extends State<FloraApp> {
                               'You can add more photos, edit the note, or correct the plant name later.'),
                           const SizedBox(height: 20),
                           FilledButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                setState(() => tab = 1);
-                              },
+                              onPressed: () =>
+                                  viewSavedEntry(context, result.observation),
                               style: FilledButton.styleFrom(
                                   minimumSize: const Size.fromHeight(52)),
                               child: const Text('View in Journal')),
@@ -250,6 +246,18 @@ class _FloraAppState extends State<FloraApp> {
 
   void message(String text) =>
       messengerKey.currentState?.showSnackBar(SnackBar(content: Text(text)));
+
+  void viewSavedEntry(BuildContext sheetContext, Observation? observation) {
+    Navigator.pop(sheetContext);
+    setState(() => tab = 1);
+    if (observation == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      navigatorKey.currentState?.push(MaterialPageRoute(
+          builder: (_) =>
+              ObservationDetail(observation: observation, onChanged: refresh)));
+    });
+  }
 
   Widget _speciesArt(Species? species) => species == null
       ? const Icon(Icons.spa_rounded, size: 90, color: forest)
