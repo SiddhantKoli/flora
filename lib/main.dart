@@ -1098,11 +1098,14 @@ class ObservationDetail extends StatefulWidget {
 
 class _ObservationDetailState extends State<ObservationDetail> {
   late final TextEditingController notes;
+  late String selectedSpeciesId;
+  bool saving = false;
 
   @override
   void initState() {
     super.initState();
     notes = TextEditingController(text: widget.observation.notes);
+    selectedSpeciesId = widget.observation.speciesId ?? '';
   }
 
   @override
@@ -1135,7 +1138,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final species = speciesById(widget.observation.speciesId);
+    final species = speciesById(selectedSpeciesId);
     return Scaffold(
         appBar: AppBar(
             title: const Text('Field note',
@@ -1206,6 +1209,22 @@ class _ObservationDetailState extends State<ObservationDetail> {
               style: const TextStyle(
                   color: FloraPalette.muted, fontStyle: FontStyle.italic)),
           const SizedBox(height: 21),
+          DropdownButtonFormField<String>(
+              initialValue: selectedSpeciesId,
+              isExpanded: true,
+              decoration: const InputDecoration(labelText: 'Plant name'),
+              items: [
+                const DropdownMenuItem(value: '', child: Text('Unknown plant')),
+                ...seedSpecies.map((plant) => DropdownMenuItem(
+                    value: plant.id, child: Text(plant.commonName)))
+              ],
+              onChanged: (value) =>
+                  setState(() => selectedSpeciesId = value ?? '')),
+          const SizedBox(height: 8),
+          const Text(
+              'Names are selected by you, not verified by FLORA. Corrections update the Plantdex but do not award more XP.',
+              style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
+          const SizedBox(height: 21),
           const Text('Your field note',
               style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
           const SizedBox(height: 10),
@@ -1217,20 +1236,38 @@ class _ObservationDetailState extends State<ObservationDetail> {
                   const InputDecoration(labelText: 'What did you notice?')),
           const SizedBox(height: 12),
           FilledButton(
-              onPressed: () async {
-                await GameStore.instance
-                    .updateNotes(widget.observation.id, notes.text);
-                await widget.onChanged();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Note saved.')));
-                }
-              },
+              onPressed: saving
+                  ? null
+                  : () async {
+                      setState(() => saving = true);
+                      try {
+                        await GameStore.instance.updateObservation(
+                            widget.observation.id,
+                            speciesId: selectedSpeciesId.isEmpty
+                                ? null
+                                : selectedSpeciesId,
+                            notes: notes.text);
+                        await widget.onChanged();
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text('Observation updated.')));
+                        }
+                      } catch (_) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text(
+                                  'Could not update this observation. Try again.')));
+                        }
+                      } finally {
+                        if (mounted) setState(() => saving = false);
+                      }
+                    },
               style: FilledButton.styleFrom(
                   backgroundColor: FloraPalette.lime,
                   foregroundColor: ink,
                   minimumSize: const Size.fromHeight(52)),
-              child: const Text('Save note',
+              child: Text(saving ? 'Saving...' : 'Save changes',
                   style: TextStyle(fontWeight: FontWeight.w900))),
         ]));
   }
