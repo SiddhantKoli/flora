@@ -1252,7 +1252,7 @@ class ObservationTile extends StatelessWidget {
                                   fontWeight: FontWeight.w900, fontSize: 15)),
                           const SizedBox(height: 4),
                           Text(
-                              '${observation.createdAt.toLocal().day}/${observation.createdAt.toLocal().month}/${observation.createdAt.toLocal().year}  ·  ${species == null ? 'Unidentified' : 'Selected by you'}',
+                              '${observation.createdAt.toLocal().day}/${observation.createdAt.toLocal().month}/${observation.createdAt.toLocal().year}  ·  ${species == null ? 'Unidentified' : 'Selected by you'}${observation.allImagePaths.length > 1 ? '  ·  ${observation.allImagePaths.length} photos' : ''}',
                               style: const TextStyle(
                                   color: FloraPalette.muted, fontSize: 12))
                         ])),
@@ -1346,6 +1346,46 @@ class _ObservationDetailState extends State<ObservationDetail> {
             content: Text(error is StateError
                 ? error.message
                 : 'Could not add this photo. Please try again.')));
+      }
+    }
+  }
+
+  Future<void> removeSelectedPhoto() async {
+    if (selectedPhotoPath == imagePaths.first) return;
+    final path = selectedPhotoPath;
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+              title: const Text('Remove this photo?'),
+              content: const Text(
+                  'This extra photo will be deleted from this device. The plant entry and its original photo will stay.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text('Cancel')),
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text('Remove photo')),
+              ],
+            ));
+    if (confirmed != true) return;
+    try {
+      await GameStore.instance
+          .deleteObservationPhoto(widget.observation.id, path);
+      if (!mounted) return;
+      setState(() {
+        imagePaths = imagePaths.where((item) => item != path).toList();
+        selectedPhotoPath = imagePaths.first;
+      });
+      await widget.onChanged();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Extra photo removed.')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Could not remove this photo. Try again.')));
       }
     }
   }
@@ -1455,6 +1495,11 @@ class _ObservationDetailState extends State<ObservationDetail> {
               onPressed: addPhoto,
               icon: const Icon(Icons.add_a_photo_outlined),
               label: Text('Add another photo (${imagePaths.length})')),
+          if (selectedPhotoPath != imagePaths.first)
+            TextButton.icon(
+                onPressed: removeSelectedPhoto,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text('Remove selected photo')),
           const SizedBox(height: 10),
           Text(
               'Observed ${widget.observation.createdAt.toLocal().day}/${widget.observation.createdAt.toLocal().month}/${widget.observation.createdAt.toLocal().year}  ·  Tap photo to inspect',

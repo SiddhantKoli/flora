@@ -312,6 +312,25 @@ class GameStore {
     return file.path;
   }
 
+  Future<void> deleteObservationPhoto(
+      String observationId, String imagePath) async {
+    final db = await database;
+    final rows = await db.query('observation_photos',
+        columns: ['id'],
+        where: 'observation_id = ? AND image_path = ?',
+        whereArgs: [observationId, imagePath],
+        limit: 1);
+    if (rows.isEmpty) throw StateError('Photo no longer exists.');
+    await db.delete('observation_photos',
+        where: 'id = ?', whereArgs: [rows.first['id']]);
+    final file = File(imagePath);
+    try {
+      if (await file.exists()) await file.delete();
+    } catch (_) {
+      // The journal no longer references this photo.
+    }
+  }
+
   /// Correct a manual label without granting another discovery reward.
   /// Previously earned XP stays earned; the Plantdex follows current labels.
   Future<void> updateObservation(String id,
