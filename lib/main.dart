@@ -10,6 +10,7 @@ import 'data/observation.dart';
 import 'data/species.dart';
 import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
+import 'features/backup/backup_page.dart';
 import 'ui/flora_design.dart';
 
 void main() {
@@ -316,7 +317,7 @@ class _FloraAppState extends State<FloraApp> {
           PlantdexPage(state: state, onScan: () => scan()),
           JournalPage(state: state, onChanged: refresh, onScan: scan),
           QuestPage(state: state, onClaim: claim),
-          ProfilePage(state: state),
+          ProfilePage(state: state, onRestored: refresh),
         ];
         return Scaffold(
           body: SafeArea(child: IndexedStack(index: tab, children: pages)),
@@ -1492,8 +1493,9 @@ class _ObservationDetailState extends State<ObservationDetail> {
 }
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key, required this.state});
+  const ProfilePage({super.key, required this.state, required this.onRestored});
   final GameSnapshot state;
+  final Future<void> Function() onRestored;
 
   @override
   Widget build(BuildContext context) =>
@@ -1584,8 +1586,16 @@ class ProfilePage extends StatelessWidget {
                 letterSpacing: -0.4)),
         const SizedBox(height: 8),
         const Text(
-            'Photos and progress live on this device. There is no account or cloud backup in this build. Plant entries are drafts, and selections are not expert identification.',
+            'Photos and progress live on this device. Plant entries are drafts, and selections are not expert identification.',
             style: TextStyle(color: FloraPalette.muted, height: 1.45)),
+        const SizedBox(height: 16),
+        OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => BackupPage(
+                    onRestored: onRestored,
+                    currentCount: state.observations.length))),
+            icon: const Icon(Icons.save_alt_rounded),
+            label: const Text('Export or restore journal')),
       ]);
 
   Widget _stat(String value, String label, Color color) => Container(

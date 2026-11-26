@@ -19,6 +19,7 @@ flutter run
 - Saves photos, notes, and observations in a local journal. You can add more in-app camera photos to an existing entry, switch between them, search plant names and notes, filter unknown plants, inspect a photo full-screen with zoom, correct a manually selected plant name (including Unknown), edit notes, and delete an observation. Correcting a name updates the Plantdex without awarding XP again.
 - Tracks first discoveries, capped repeat XP, daily and weekly quest progress and claims, and two achievement milestones.
 - Shows a searchable Plantdex with collected and undiscovered sample entries, plus profile stats and badges.
+- Exports a local FLORA backup file containing journal photos, notes, discoveries, and progress. The Profile screen can restore a backup after preview and explicit replacement confirmation. FLORA does not upload this file.
 - Uses an adaptive Android launcher icon and a custom launch screen.
 
 Plant selection is user-provided. FLORA does **not** identify plants from photos, recommend a match, or provide an identification confidence score. The sample catalog contains eight illustrative entries; it is not a reviewed or complete botanical reference. Treat selected names as personal labels, not verified identifications. Do not use FLORA to decide whether a plant is safe to eat, touch, or use as medicine.
@@ -26,10 +27,10 @@ Plant selection is user-provided. FLORA does **not** identify plants from photos
 ## What is missing
 
 - A deeper multi-step onboarding and a guided first observation walkthrough.
-- In-app settings, display-name/avatar editing, accessibility preferences, data export, and a clear-all-data action.
+- A broader settings screen, display-name/avatar editing, accessibility preferences, and a clear-all-data action.
 - A larger, botanically reviewed catalog with distinct, rights-cleared images or artwork for every entry.
 - Automatic photo identification, suggested matches, confidence values, and expert verification.
-- Cloud backup, account sign-in, and transfer of local data to another device. Uninstalling the app or losing the device can remove its local photos and progress.
+- Cloud backup and account sign-in. Exporting and restoring a local backup file can transfer data, but unsaved local data may be lost on uninstall or device loss.
 - Social features, notifications, and a more developed progression and reward system.
 
 The UI has Plantdex, Journal, Quests, and profile tabs with a soft neutral palette, bright accents, original simple illustrations, and small entrance animations. Settings are not implemented yet.
@@ -46,4 +47,4 @@ The Atomic Purple camera shell recreates the supplied reference with Flutter wid
 
 ## Before release
 
-Review the catalog and all plant safety language with qualified botanical sources, confirm imagery rights, add reliable backup and export controls, and test on physical Android devices with real photos. Any future identification feature needs a validated model and a clear way to communicate uncertainty.
+Review the catalog and all plant safety language with qualified botanical sources, confirm imagery rights, test backup and restore with large real journals and on physical Android devices, and test the camera with real photos. Any future identification feature needs a validated model and a clear way to communicate uncertainty.
