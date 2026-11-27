@@ -555,6 +555,7 @@ class _ReviewPageState extends State<ReviewPage> {
                       height: 205,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      cacheWidth: 1000,
                       errorBuilder: (_, __, ___) => const SizedBox(
                           height: 205,
                           child: Center(
@@ -1339,7 +1340,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
               title: const Text('Add this photo?'),
               content: Column(mainAxisSize: MainAxisSize.min, children: [
                 Image.file(File(photo.displayPath),
-                    height: 190, fit: BoxFit.contain),
+                    height: 190, fit: BoxFit.contain, cacheWidth: 700),
                 const SizedBox(height: 10),
                 const Text('This photo will join the same plant entry.'),
               ]),
@@ -1489,6 +1490,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
                           height: 260,
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          cacheWidth: 1100,
                           errorBuilder: (_, __, ___) => const SizedBox(
                               height: 260,
                               child:
@@ -1519,7 +1521,8 @@ class _ObservationDetailState extends State<ObservationDetail> {
                                 child: Image.file(File(imagePaths[index]),
                                     width: 66,
                                     height: 66,
-                                    fit: BoxFit.cover)))))),
+                                    fit: BoxFit.cover,
+                                    cacheWidth: 198)))))),
             const SizedBox(height: 10),
           ],
           OutlinedButton.icon(
