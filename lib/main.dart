@@ -314,7 +314,11 @@ class _FloraAppState extends State<FloraApp> {
                 onOpenVisit: (visit) => navigatorKey.currentState!.push(
                     MaterialPageRoute(
                         builder: (_) => ObservationDetail(
-                            observation: visit, onChanged: refresh))),
+                            observation: visit,
+                            onChanged: refresh,
+                            plantName: snapshot
+                                ?.plantById(visit.plantId)
+                                ?.displayName))),
               )));
     });
   }
@@ -405,7 +409,11 @@ class _FloraAppState extends State<FloraApp> {
               onOpenVisit: (observation) => navigatorKey.currentState!.push(
                   MaterialPageRoute(
                       builder: (_) => ObservationDetail(
-                          observation: observation, onChanged: refresh)))),
+                          observation: observation,
+                          onChanged: refresh,
+                          plantName: state
+                              .plantById(observation.plantId)
+                              ?.displayName)))),
           QuestPage(state: state, onClaim: claim),
           ProfilePage(
               state: state,
@@ -1273,9 +1281,13 @@ class QuestCard extends StatelessWidget {
 
 class ObservationDetail extends StatefulWidget {
   const ObservationDetail(
-      {super.key, required this.observation, required this.onChanged});
+      {super.key,
+      required this.observation,
+      required this.onChanged,
+      this.plantName});
   final Observation observation;
   final Future<void> Function() onChanged;
+  final String? plantName;
 
   @override
   State<ObservationDetail> createState() => _ObservationDetailState();
@@ -1283,7 +1295,6 @@ class ObservationDetail extends StatefulWidget {
 
 class _ObservationDetailState extends State<ObservationDetail> {
   late final TextEditingController notes;
-  late String selectedSpeciesId;
   late List<String> imagePaths;
   late String selectedPhotoPath;
   bool saving = false;
@@ -1292,7 +1303,6 @@ class _ObservationDetailState extends State<ObservationDetail> {
   void initState() {
     super.initState();
     notes = TextEditingController(text: widget.observation.notes);
-    selectedSpeciesId = widget.observation.speciesId ?? '';
     imagePaths = widget.observation.allImagePaths;
     selectedPhotoPath = imagePaths.first;
   }
@@ -1422,7 +1432,6 @@ class _ObservationDetailState extends State<ObservationDetail> {
 
   @override
   Widget build(BuildContext context) {
-    final species = speciesById(selectedSpeciesId);
     return Scaffold(
         appBar: AppBar(
             title: const Text('Field note',
@@ -1513,37 +1522,33 @@ class _ObservationDetailState extends State<ObservationDetail> {
               'Observed ${widget.observation.createdAt.toLocal().day}/${widget.observation.createdAt.toLocal().month}/${widget.observation.createdAt.toLocal().year}  ·  Tap photo to inspect',
               style: const TextStyle(color: FloraPalette.muted, fontSize: 13)),
           const SizedBox(height: 12),
-          Text(species == null ? 'SAVED AS UNKNOWN' : 'SELECTED BY YOU',
+          Text(
+              widget.observation.speciesId == null
+                  ? 'PERSONAL PLANT'
+                  : 'SELECTED BY YOU',
               style: const TextStyle(
                   color: forest,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
                   fontSize: 11)),
           const SizedBox(height: 6),
-          Text(species?.commonName ?? 'Unknown plant',
+          Text(
+              widget.plantName ??
+                  speciesById(widget.observation.speciesId)?.commonName ??
+                  'Unknown plant',
               style: const TextStyle(
                   fontSize: 31,
                   fontWeight: FontWeight.w900,
                   letterSpacing: -1)),
           const SizedBox(height: 4),
-          Text(species?.scientificName ?? 'A story waiting for a name',
+          Text(
+              speciesById(widget.observation.speciesId)?.scientificName ??
+                  'Your own plant label',
               style: const TextStyle(
                   color: FloraPalette.muted, fontStyle: FontStyle.italic)),
           const SizedBox(height: 21),
-          DropdownButtonFormField<String>(
-              initialValue: selectedSpeciesId,
-              isExpanded: true,
-              decoration: const InputDecoration(labelText: 'Plant name'),
-              items: [
-                const DropdownMenuItem(value: '', child: Text('Unknown plant')),
-                ...seedSpecies.map((plant) => DropdownMenuItem(
-                    value: plant.id, child: Text(plant.commonName)))
-              ],
-              onChanged: (value) =>
-                  setState(() => selectedSpeciesId = value ?? '')),
-          const SizedBox(height: 8),
           const Text(
-              'Names are selected by you, not verified by FLORA. Corrections update the Plantdex but do not award more XP.',
+              'Edit this plant’s name and place from its journal page. Names are selected by you, not verified by FLORA.',
               style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
           const SizedBox(height: 21),
           const Text('Your field note',
@@ -1564,9 +1569,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
                       try {
                         await GameStore.instance.updateObservation(
                             widget.observation.id,
-                            speciesId: selectedSpeciesId.isEmpty
-                                ? null
-                                : selectedSpeciesId,
+                            speciesId: widget.observation.speciesId,
                             notes: notes.text);
                         await widget.onChanged();
                         if (context.mounted) {
