@@ -1,6 +1,6 @@
 # FLORA
 
-FLORA is an Android-first Flutter prototype for keeping a personal log of plants you notice. It runs in guest mode and stores observations and game progress locally on the device.
+FLORA is an Android-first Flutter prototype for keeping a personal journal of plants you notice. It runs in guest mode and stores photos, notes, and game progress locally on the device.
 
 ## Run locally
 
@@ -14,12 +14,13 @@ flutter run
 ## What the app currently does
 
 - Opens on the Plantdex and provides a center **Add a plant** camera action. New observations require a photo taken in the in-app Atomic Purple FLORA Cam; gallery imports are unavailable. The camera has a square viewfinder, front/rear switching, five subtle digicam-inspired looks in the gear menu, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
-- Shows the selected photo for review. You can retake it, search the small sample catalog and manually choose a plant, or save the photo as unknown with an optional note. When a camera look is applied, review lets you save the edited copy or the original. If saving fails or the photo is a duplicate, review stays open with a visible recovery message.
+- Shows the selected photo for review. You can retake it, search the small sample catalog and manually choose a plant, give it your own unverified name, or save it as unknown. An optional nickname, place label, and field note make the entry personal. The place label is typed by the user; FLORA does not record GPS. When a camera look is applied, review lets you save the edited copy or the original. If saving fails or the photo is a duplicate, review stays open with a visible recovery message.
 - On first run, explains camera capture, manual naming, and local storage, with a direct path to the first plant. A save confirmation shows the earned XP or saved count and can open the exact saved entry.
-- Saves photos, notes, and observations in a local journal. You can add more in-app camera photos to an existing entry, switch between them, remove an extra photo, search plant names and notes, filter unknown plants, inspect a photo full-screen with zoom, correct a manually selected plant name (including Unknown), edit notes, and delete an observation. Correcting a name updates the Plantdex without awarding XP again.
+- Groups dated visits around each personal plant in a photo-led Journal. You can revisit the same plant with a new in-app camera photo, search names, places, and notes, filter unknown plants, edit its name/nickname/place, and review its timeline. Each visit can hold extra in-app photos, a note, and a zoomable photo view. You can edit a visit note or delete a visit; deleting the last visit also removes its plant page. Name corrections apply to all visits for that plant and update the Plantdex without awarding XP again. Earned XP remains after deleting a visit.
 - Tracks first discoveries, capped repeat XP, daily and weekly quest progress and claims, and two achievement milestones.
-- Shows a searchable Plantdex with collected and undiscovered sample entries, plus profile stats and badges.
-- Exports a local FLORA backup file containing journal photos, notes, discoveries, and progress. The Profile screen can restore a backup after preview and explicit replacement confirmation. FLORA does not upload this file.
+- Shows a searchable Plantdex with collected and undiscovered sample entries. The guest profile has a local display name and icon, recent plants, stats, and badges.
+- Exports a local FLORA backup file containing linked plants, visits, photos, notes, discoveries, and progress. The Profile or Settings screen can restore a backup after preview and explicit replacement confirmation. Older FLORA backups can also be restored. FLORA does not upload this file. Display name, icon, and accessibility preferences are not included in backups.
+- Provides Settings for larger text, reduced motion, camera permission guidance, local privacy details, backup access, and a confirmed delete-all-local-data action.
 - Uses an adaptive Android launcher icon and a custom launch screen.
 
 Plant selection is user-provided. FLORA does **not** identify plants from photos, recommend a match, or provide an identification confidence score. The sample catalog contains eight illustrative entries; it is not a reviewed or complete botanical reference. Treat selected names as personal labels, not verified identifications. Do not use FLORA to decide whether a plant is safe to eat, touch, or use as medicine.
@@ -27,13 +28,13 @@ Plant selection is user-provided. FLORA does **not** identify plants from photos
 ## What is missing
 
 - A deeper multi-step onboarding and a guided first observation walkthrough.
-- A broader settings screen, display-name/avatar editing, accessibility preferences, and a clear-all-data action.
+- Profile and accessibility settings in the backup format, plus a fuller first-plant walkthrough.
 - A larger, botanically reviewed catalog with distinct, rights-cleared images or artwork for every entry.
 - Automatic photo identification, suggested matches, confidence values, and expert verification.
 - Cloud backup and account sign-in. Exporting and restoring a local backup file can transfer data, but unsaved local data may be lost on uninstall or device loss.
 - Social features, notifications, and a more developed progression and reward system.
 
-The UI has Plantdex, Journal, Quests, and profile tabs with a soft neutral palette, bright accents, original simple illustrations, and small entrance animations. Settings are not implemented yet.
+The UI has Plantdex, Journal, Quests, and profile tabs with a soft neutral palette, bright accents, original simple illustrations, and optional entrance animations. Settings is available from Profile. The Journal screenshot below may show an earlier layout; the current Journal is organized by personal plant.
 
 The Atomic Purple camera shell recreates the supplied reference with Flutter widgets and vector painting: layered acrylic edges, circuitry, chips, screws, raised controls, sticker, and light reflections. No screenshot is used as a camera overlay; the square center remains a live camera preview. Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
 
