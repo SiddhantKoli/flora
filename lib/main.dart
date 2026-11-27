@@ -1151,24 +1151,38 @@ class QuestPage extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
                 color: forest, borderRadius: BorderRadius.circular(23)),
-            child: Row(children: [
-              const Icon(Icons.bolt_rounded,
-                  color: FloraPalette.lime, size: 36),
-              const SizedBox(width: 12),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('${state.xp} XP',
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                const Icon(Icons.bolt_rounded,
+                    color: FloraPalette.lime, size: 36),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Text('${state.xp} XP',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 24))),
+                Text('LVL ${levelForXp(state.xp)}',
                     style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 24)),
-                const Text('your total so far',
-                    style: TextStyle(color: Color(0xFFC4D9CB)))
+                        color: FloraPalette.lime, fontWeight: FontWeight.w900)),
               ]),
-              const Spacer(),
-              Text('LVL ${levelForXp(state.xp)}',
-                  style: const TextStyle(
-                      color: FloraPalette.lime, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 15),
+              LinearProgressIndicator(
+                  value: xpIntoLevel(state.xp) / 250,
+                  minHeight: 7,
+                  borderRadius: BorderRadius.circular(7),
+                  color: FloraPalette.lime,
+                  backgroundColor: Colors.white24),
+              const SizedBox(height: 8),
+              Text(
+                  '${250 - xpIntoLevel(state.xp)} XP to level ${levelForXp(state.xp) + 1}',
+                  style: const TextStyle(color: Color(0xFFC4D9CB))),
             ])),
+        const SizedBox(height: 12),
+        const Text(
+            'First catalog discovery: +100 XP. A new photo of a plant already found: +10 XP at most once per day. Unknown plants can still be part of your journal.',
+            style: TextStyle(color: FloraPalette.muted, height: 1.4)),
         const SizedBox(height: 25),
         const Text('ON THE BOARD',
             style: TextStyle(
@@ -1196,7 +1210,7 @@ class QuestPage extends StatelessWidget {
             onClaim: () => onClaim('weekly')),
         const SizedBox(height: 18),
         const Text(
-            'Progress comes from your own plant selections. Quests reset on your device’s local calendar.',
+            'Quests are optional. You can keep a journal without claiming them. Progress uses your own catalog selections and resets on your device’s local calendar.',
             style: TextStyle(
                 color: FloraPalette.muted, fontSize: 12, height: 1.4)),
       ]);
