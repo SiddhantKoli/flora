@@ -15,6 +15,7 @@ import 'features/camera/camera_look.dart';
 import 'features/backup/backup_page.dart';
 import 'features/journal/personal_journal_page.dart';
 import 'features/plantdex/explore_page.dart';
+import 'features/quests/progress_page.dart';
 import 'features/settings/settings_page.dart';
 import 'ui/flora_design.dart';
 
@@ -449,7 +450,7 @@ class _FloraAppState extends State<FloraApp> {
                           plantName: state
                               .plantById(observation.plantId)
                               ?.displayName)))),
-          QuestPage(state: state, onClaim: claim),
+          ProgressPage(state: state, onClaim: claim),
           ProfilePage(
               state: state,
               preferences: preferences,
