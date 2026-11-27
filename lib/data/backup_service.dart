@@ -23,6 +23,7 @@ class BackupService {
 
   Future<Uint8List> createBackup() async {
     final db = await GameStore.instance.database;
+    final plants = await db.query('personal_plants', orderBy: 'created_at');
     final observations = await db.query('observations', orderBy: 'created_at');
     final photos = await db.query('observation_photos', orderBy: 'created_at');
     final byObservation = <String, List<Map<String, Object?>>>{};
@@ -35,6 +36,9 @@ class BackupService {
     for (final row in observations) {
       entries.add({
         'id': row['id'],
+        'plant_id': row['plant_id'] ??
+            (throw StateError(
+                'A journal visit has no plant. Backup was not created.')),
         'created_at': row['created_at'],
         'local_day': row['local_day'],
         'local_week': row['local_week'],
@@ -55,8 +59,19 @@ class BackupService {
     }
     final backup = {
       'format': 'flora-journal',
-      'version': 1,
+      'version': 2,
       'exported_at': DateTime.now().toUtc().toIso8601String(),
+      'plants': [
+        for (final row in plants)
+          {
+            'id': row['id'],
+            'created_at': row['created_at'],
+            'species_id': row['species_id'],
+            'custom_name': row['custom_name'],
+            'nickname': row['nickname'],
+            'place_label': row['place_label'],
+          }
+      ],
       'observations': entries,
       'discoveries': await db.query('discoveries'),
       'rewards': await db.query('rewards'),
