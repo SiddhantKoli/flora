@@ -565,4 +565,24 @@ class GameStore {
       }
     }
   }
+
+  Future<void> clearAllData() async {
+    final db = await database;
+    await db.transaction((txn) async {
+      for (final table in [
+        'observation_photos',
+        'observations',
+        'personal_plants',
+        'discoveries',
+        'rewards',
+        'achievements',
+        'quest_claims'
+      ]) {
+        await txn.delete(table);
+      }
+    });
+    final documents = await getApplicationDocumentsDirectory();
+    final photos = Directory(p.join(documents.path, 'observations'));
+    if (await photos.exists()) await photos.delete(recursive: true);
+  }
 }
