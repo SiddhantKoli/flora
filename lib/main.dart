@@ -7,10 +7,12 @@ import 'package:path_provider/path_provider.dart';
 import 'data/game_rules.dart';
 import 'data/game_store.dart';
 import 'data/observation.dart';
+import 'data/personal_plant.dart';
 import 'data/species.dart';
 import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
 import 'features/backup/backup_page.dart';
+import 'features/journal/personal_journal_page.dart';
 import 'ui/flora_design.dart';
 
 void main() {
@@ -245,6 +247,26 @@ class _FloraAppState extends State<FloraApp> {
     }
   }
 
+  Future<void> addVisit(PersonalPlant plant) async {
+    final navigator = navigatorKey.currentState;
+    if (navigator == null) return;
+    try {
+      final photo = await navigator.push<CapturedPlantPhoto>(MaterialPageRoute(
+          builder: (_) => AddPlantCameraScreen(
+              onPhotoReady: (captured) => navigator.pop(captured))));
+      if (photo == null || !mounted) return;
+      final result = await navigator.push<SaveResult>(MaterialPageRoute(
+          builder: (_) => ReviewPage(photo: photo, existingPlant: plant)));
+      if (result == null || !mounted) return;
+      await refresh();
+      if (mounted)
+        message('Visit saved to ${plant.displayName}. +${result.xpEarned} XP');
+    } catch (error, stackTrace) {
+      debugPrint('Add visit failed: $error\n$stackTrace');
+      if (mounted) message('Could not save this visit. Try again.');
+    }
+  }
+
   void message(String text) =>
       messengerKey.currentState?.showSnackBar(SnackBar(content: Text(text)));
 
@@ -324,7 +346,15 @@ class _FloraAppState extends State<FloraApp> {
         final state = snapshot!;
         final pages = <Widget>[
           PlantdexPage(state: state, onScan: () => scan()),
-          JournalPage(state: state, onChanged: refresh, onScan: scan),
+          PersonalJournalPage(
+              state: state,
+              onChanged: refresh,
+              onAddPlant: scan,
+              onAddVisit: addVisit,
+              onOpenVisit: (observation) => navigatorKey.currentState!.push(
+                  MaterialPageRoute(
+                      builder: (_) => ObservationDetail(
+                          observation: observation, onChanged: refresh)))),
           QuestPage(state: state, onClaim: claim),
           ProfilePage(state: state, onRestored: refresh),
         ];
@@ -341,8 +371,9 @@ class _FloraAppState extends State<FloraApp> {
 }
 
 class ReviewPage extends StatefulWidget {
-  const ReviewPage({super.key, required this.photo});
+  const ReviewPage({super.key, required this.photo, this.existingPlant});
   final CapturedPlantPhoto photo;
+  final PersonalPlant? existingPlant;
 
   @override
   State<ReviewPage> createState() => _ReviewPageState();
@@ -384,10 +415,12 @@ class _ReviewPageState extends State<ReviewPage> {
     try {
       final result = await GameStore.instance.saveObservation(
           source: File(showOriginal ? photo.originalPath : photo.displayPath),
-          speciesId: speciesId,
-          customName: asUnknown ? '' : customName.text,
-          nickname: nickname.text,
-          placeLabel: placeLabel.text,
+          plantId: widget.existingPlant?.id,
+          speciesId: widget.existingPlant?.speciesId ?? speciesId,
+          customName:
+              widget.existingPlant == null && !asUnknown ? customName.text : '',
+          nickname: widget.existingPlant == null ? nickname.text : '',
+          placeLabel: widget.existingPlant == null ? placeLabel.text : '',
           notes: notes.text);
       if (result.duplicateImage) {
         if (mounted) {
@@ -432,7 +465,7 @@ class _ReviewPageState extends State<ReviewPage> {
         .toList();
     return Scaffold(
       appBar: AppBar(
-          title: const Text('New observation',
+          title: Text(widget.existingPlant == null ? 'New plant' : 'New visit',
               style:
                   TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5))),
       body: SafeArea(
@@ -482,68 +515,81 @@ class _ReviewPageState extends State<ReviewPage> {
                     value: showOriginal,
                     onChanged: (value) => setState(() => showOriginal = value)),
               ],
-              const Text('YOUR FIND',
-                  style: TextStyle(
-                      color: forest,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1)),
-              const SizedBox(height: 5),
-              const Text('Look familiar?',
-                  style: TextStyle(
-                      color: ink,
-                      fontSize: 31,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1)),
-              const SizedBox(height: 6),
-              const Text(
-                  'FLORA does not identify plants yet. Choose one only if you recognize it, or save this photo as unknown.',
-                  style: TextStyle(color: FloraPalette.muted, height: 1.35)),
-              const SizedBox(height: 18),
-              TextField(
-                  onChanged: (value) => setState(() => search = value),
-                  decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search),
-                      hintText: 'Search by name',
-                      labelText: 'Find a plant')),
-              const SizedBox(height: 10),
-              if (matches.isEmpty)
-                const Padding(
-                    padding: EdgeInsets.all(16),
-                    child:
-                        Text('No match. You can still save this as unknown.')),
-              ...matches.map((species) => _candidateTile(species)),
-              const SizedBox(height: 14),
-              TextField(
-                  controller: customName,
-                  maxLength: 80,
-                  onChanged: (_) => setState(() => selectedId = null),
-                  decoration: const InputDecoration(
-                      labelText: 'Or write your own plant name',
-                      hintText: 'Your unverified label')),
-              const SizedBox(height: 4),
-              const Text(
-                  'A name you enter yourself stays a personal label, not a verified identification.',
-                  style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
-              const SizedBox(height: 14),
-              TextField(
-                  controller: nickname,
-                  maxLength: 60,
-                  decoration: const InputDecoration(
-                      labelText: 'Nickname for this plant (optional)',
-                      hintText: 'The balcony one')),
-              const SizedBox(height: 8),
-              TextField(
-                  controller: placeLabel,
-                  maxLength: 80,
-                  decoration: const InputDecoration(
-                      labelText: 'Where did you see it? (optional)',
-                      hintText: 'School garden')),
-              const SizedBox(height: 4),
-              const Text(
-                  'Place is a note you write. FLORA does not record GPS here.',
-                  style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
-              const SizedBox(height: 14),
+              if (widget.existingPlant != null) ...[
+                Text(widget.existingPlant!.displayName,
+                    style: const TextStyle(
+                        fontSize: 30, fontWeight: FontWeight.w900)),
+                const SizedBox(height: 6),
+                Text(
+                    widget.existingPlant!.placeLabel.isEmpty
+                        ? 'Add another dated photo to this plant.'
+                        : '${widget.existingPlant!.placeLabel} · Add another dated photo.',
+                    style: const TextStyle(color: FloraPalette.muted)),
+                const SizedBox(height: 18),
+              ] else ...[
+                const Text('YOUR FIND',
+                    style: TextStyle(
+                        color: forest,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1)),
+                const SizedBox(height: 5),
+                const Text('Look familiar?',
+                    style: TextStyle(
+                        color: ink,
+                        fontSize: 31,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1)),
+                const SizedBox(height: 6),
+                const Text(
+                    'FLORA does not identify plants yet. Choose one only if you recognize it, or save this photo as unknown.',
+                    style: TextStyle(color: FloraPalette.muted, height: 1.35)),
+                const SizedBox(height: 18),
+                TextField(
+                    onChanged: (value) => setState(() => search = value),
+                    decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        hintText: 'Search by name',
+                        labelText: 'Find a plant')),
+                const SizedBox(height: 10),
+                if (matches.isEmpty)
+                  const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                          'No match. You can still save this as unknown.')),
+                ...matches.map((species) => _candidateTile(species)),
+                const SizedBox(height: 14),
+                TextField(
+                    controller: customName,
+                    maxLength: 80,
+                    onChanged: (_) => setState(() => selectedId = null),
+                    decoration: const InputDecoration(
+                        labelText: 'Or write your own plant name',
+                        hintText: 'Your unverified label')),
+                const SizedBox(height: 4),
+                const Text(
+                    'A name you enter yourself stays a personal label, not a verified identification.',
+                    style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
+                const SizedBox(height: 14),
+                TextField(
+                    controller: nickname,
+                    maxLength: 60,
+                    decoration: const InputDecoration(
+                        labelText: 'Nickname for this plant (optional)',
+                        hintText: 'The balcony one')),
+                const SizedBox(height: 8),
+                TextField(
+                    controller: placeLabel,
+                    maxLength: 80,
+                    decoration: const InputDecoration(
+                        labelText: 'Where did you see it? (optional)',
+                        hintText: 'School garden')),
+                const SizedBox(height: 4),
+                const Text(
+                    'Place is a note you write. FLORA does not record GPS here.',
+                    style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
+                const SizedBox(height: 14),
+              ],
               TextField(
                   controller: notes,
                   minLines: 2,
@@ -558,21 +604,30 @@ class _ReviewPageState extends State<ReviewPage> {
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
             child: Column(children: [
               FilledButton(
-                  onPressed:
-                      (selectedId == null && customName.text.trim().isEmpty) ||
-                              saving
-                          ? null
-                          : () => save(selectedId),
+                  onPressed: (widget.existingPlant == null &&
+                              selectedId == null &&
+                              customName.text.trim().isEmpty) ||
+                          saving
+                      ? null
+                      : () =>
+                          save(widget.existingPlant?.speciesId ?? selectedId),
                   style: FilledButton.styleFrom(
                       backgroundColor: FloraPalette.lime,
                       foregroundColor: ink,
                       minimumSize: const Size.fromHeight(54)),
-                  child: Text(saving ? 'Saving…' : 'Save plant',
+                  child: Text(
+                      saving
+                          ? 'Saving…'
+                          : widget.existingPlant == null
+                              ? 'Save plant'
+                              : 'Save visit',
                       style: const TextStyle(fontWeight: FontWeight.w900))),
-              TextButton(
-                  onPressed: saving ? null : () => save(null, asUnknown: true),
-                  child: const Text('Not sure? Save photo as unknown',
-                      style: TextStyle(fontWeight: FontWeight.w700))),
+              if (widget.existingPlant == null)
+                TextButton(
+                    onPressed:
+                        saving ? null : () => save(null, asUnknown: true),
+                    child: const Text('Not sure? Save photo as unknown',
+                        style: TextStyle(fontWeight: FontWeight.w700))),
             ])),
       ])),
     );
