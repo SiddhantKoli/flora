@@ -14,6 +14,7 @@ import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
 import 'features/backup/backup_page.dart';
 import 'features/journal/personal_journal_page.dart';
+import 'features/settings/settings_page.dart';
 import 'ui/flora_design.dart';
 
 void main() {
@@ -56,6 +57,22 @@ class _FloraAppState extends State<FloraApp> {
   Future<void> updatePreferences(AppPreferences next) async {
     await AppPreferencesStore.instance.save(next);
     if (mounted) setState(() => preferences = next);
+  }
+
+  Future<void> clearLocalData() async {
+    await GameStore.instance.clearAllData();
+    await AppPreferencesStore.instance.save(const AppPreferences());
+    final directory = await getApplicationSupportDirectory();
+    final marker = File(p.join(directory.path, 'first_run_seen'));
+    if (await marker.exists()) await marker.delete();
+    if (mounted) {
+      setState(() {
+        preferences = const AppPreferences();
+        tab = 0;
+      });
+      await refresh();
+      message('Local FLORA data deleted.');
+    }
   }
 
   Future<void> refresh() async {
@@ -395,7 +412,15 @@ class _FloraAppState extends State<FloraApp> {
               preferences: preferences,
               onPreferencesChanged: updatePreferences,
               onRestored: refresh,
-              onJournal: () => setState(() => tab = 1)),
+              onJournal: () => setState(() => tab = 1),
+              onSettings: () => navigatorKey.currentState!.push(
+                  MaterialPageRoute(
+                      builder: (_) => SettingsPage(
+                          state: state,
+                          preferences: preferences,
+                          onPreferencesChanged: updatePreferences,
+                          onDataChanged: refresh,
+                          onClearData: clearLocalData)))),
         ];
         return Scaffold(
           body: SafeArea(child: IndexedStack(index: tab, children: pages)),
@@ -1576,12 +1601,14 @@ class ProfilePage extends StatelessWidget {
       required this.preferences,
       required this.onPreferencesChanged,
       required this.onRestored,
-      required this.onJournal});
+      required this.onJournal,
+      required this.onSettings});
   final GameSnapshot state;
   final AppPreferences preferences;
   final Future<void> Function(AppPreferences) onPreferencesChanged;
   final Future<void> Function() onRestored;
   final VoidCallback onJournal;
+  final VoidCallback onSettings;
 
   Future<void> editProfile(BuildContext context) async {
     final name = TextEditingController(text: preferences.displayName);
@@ -1661,6 +1688,9 @@ class ProfilePage extends StatelessWidget {
         const SizedBox(height: 6),
         const Text('Guest profile · saved on this device',
             style: TextStyle(color: FloraPalette.muted, fontSize: 15)),
+        const SizedBox(height: 8),
+        const Text('Export a backup before reinstalling or changing phones.',
+            style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
         const SizedBox(height: 14),
         Row(children: [
           CircleAvatar(
@@ -1780,6 +1810,11 @@ class ProfilePage extends StatelessWidget {
                 builder: (_) => BackupPage(onRestored: onRestored))),
             icon: const Icon(Icons.save_alt_rounded),
             label: const Text('Export or restore journal')),
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+            onPressed: onSettings,
+            icon: const Icon(Icons.settings_outlined),
+            label: const Text('Settings & privacy')),
       ]);
 
   Widget _stat(String value, String label, Color color) => Container(
