@@ -5,6 +5,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'data/game_rules.dart';
+import 'data/app_preferences.dart';
 import 'data/game_store.dart';
 import 'data/observation.dart';
 import 'data/personal_plant.dart';
@@ -38,11 +39,23 @@ class _FloraAppState extends State<FloraApp> {
   Object? loadError;
   int tab = 0;
   bool firstRunChecked = false;
+  AppPreferences preferences = const AppPreferences();
 
   @override
   void initState() {
     super.initState();
     refresh();
+    loadPreferences();
+  }
+
+  Future<void> loadPreferences() async {
+    final next = await AppPreferencesStore.instance.load();
+    if (mounted) setState(() => preferences = next);
+  }
+
+  Future<void> updatePreferences(AppPreferences next) async {
+    await AppPreferencesStore.instance.save(next);
+    if (mounted) setState(() => preferences = next);
   }
 
   Future<void> refresh() async {
@@ -311,6 +324,20 @@ class _FloraAppState extends State<FloraApp> {
       navigatorKey: navigatorKey,
       scaffoldMessengerKey: messengerKey,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) {
+        final media = MediaQuery.of(context);
+        return MediaQuery(
+          data: media.copyWith(
+              textScaler: preferences.largeText
+                  ? (media.textScaler.scale(1) < 1.18
+                      ? const TextScaler.linear(1.18)
+                      : media.textScaler)
+                  : media.textScaler,
+              disableAnimations:
+                  preferences.reducedMotion || media.disableAnimations),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: scheme,
@@ -363,7 +390,12 @@ class _FloraAppState extends State<FloraApp> {
                       builder: (_) => ObservationDetail(
                           observation: observation, onChanged: refresh)))),
           QuestPage(state: state, onClaim: claim),
-          ProfilePage(state: state, onRestored: refresh),
+          ProfilePage(
+              state: state,
+              preferences: preferences,
+              onPreferencesChanged: updatePreferences,
+              onRestored: refresh,
+              onJournal: () => setState(() => tab = 1)),
         ];
         return Scaffold(
           body: SafeArea(child: IndexedStack(index: tab, children: pages)),
@@ -1538,21 +1570,110 @@ class _ObservationDetailState extends State<ObservationDetail> {
 }
 
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key, required this.state, required this.onRestored});
+  const ProfilePage(
+      {super.key,
+      required this.state,
+      required this.preferences,
+      required this.onPreferencesChanged,
+      required this.onRestored,
+      required this.onJournal});
   final GameSnapshot state;
+  final AppPreferences preferences;
+  final Future<void> Function(AppPreferences) onPreferencesChanged;
   final Future<void> Function() onRestored;
+  final VoidCallback onJournal;
+
+  Future<void> editProfile(BuildContext context) async {
+    final name = TextEditingController(text: preferences.displayName);
+    var avatar = preferences.avatar;
+    await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        showDragHandle: true,
+        builder: (sheetContext) => StatefulBuilder(
+            builder: (context, setSheetState) => SafeArea(
+                child: Padding(
+                    padding: EdgeInsets.fromLTRB(20, 8, 20,
+                        MediaQuery.viewInsetsOf(context).bottom + 22),
+                    child: SingleChildScrollView(
+                        child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                          const Text('Make it yours',
+                              style: TextStyle(
+                                  fontSize: 28, fontWeight: FontWeight.w900)),
+                          const SizedBox(height: 14),
+                          TextField(
+                              controller: name,
+                              maxLength: 40,
+                              decoration: const InputDecoration(
+                                  labelText: 'Display name',
+                                  hintText: 'Guest explorer')),
+                          const SizedBox(height: 8),
+                          const Text('Choose an icon',
+                              style: TextStyle(fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 8),
+                          Wrap(
+                              spacing: 10,
+                              children: ['leaf', 'flower', 'sun', 'spark']
+                                  .map((option) => ChoiceChip(
+                                      label: Icon(_avatarIcon(option),
+                                          semanticLabel: option),
+                                      selected: avatar == option,
+                                      onSelected: (_) =>
+                                          setSheetState(() => avatar = option)))
+                                  .toList()),
+                          const SizedBox(height: 18),
+                          FilledButton(
+                              onPressed: () async {
+                                await onPreferencesChanged(preferences.copyWith(
+                                    displayName: name.text.trim(),
+                                    avatar: avatar));
+                                if (sheetContext.mounted)
+                                  Navigator.pop(sheetContext);
+                              },
+                              style: FilledButton.styleFrom(
+                                  minimumSize: const Size.fromHeight(52)),
+                              child: const Text('Save profile')),
+                        ]))))));
+    name.dispose();
+  }
+
+  IconData _avatarIcon(String name) => switch (name) {
+        'flower' => Icons.local_florist_rounded,
+        'sun' => Icons.wb_sunny_rounded,
+        'spark' => Icons.auto_awesome_rounded,
+        _ => Icons.spa_rounded,
+      };
 
   @override
   Widget build(BuildContext context) =>
       ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 30), children: [
-        const Text('You, in bloom.',
+        Text(
+            preferences.displayName.isEmpty
+                ? 'You, in bloom.'
+                : '${preferences.displayName}, in bloom.',
             style: TextStyle(
                 fontSize: 38,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -1.7)),
         const SizedBox(height: 6),
-        const Text('A guest explorer with a growing story.',
+        const Text('Guest profile · saved on this device',
             style: TextStyle(color: FloraPalette.muted, fontSize: 15)),
+        const SizedBox(height: 14),
+        Row(children: [
+          CircleAvatar(
+              radius: 29,
+              backgroundColor: FloraPalette.lilac,
+              child: Icon(_avatarIcon(preferences.avatar),
+                  size: 30, color: forest)),
+          const SizedBox(width: 12),
+          OutlinedButton.icon(
+              onPressed: () => editProfile(context),
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Edit profile')),
+        ]),
         const SizedBox(height: 23),
         Container(
             height: 190,
@@ -1611,6 +1732,26 @@ class ProfilePage extends StatelessWidget {
               child: _stat('${state.observations.length}', 'Field notes',
                   FloraPalette.blue)),
         ]),
+        const SizedBox(height: 14),
+        OutlinedButton.icon(
+            onPressed: onJournal,
+            icon: const Icon(Icons.menu_book_outlined),
+            label: const Text('Open your plant journal')),
+        if (state.plants.isNotEmpty) ...[
+          const SizedBox(height: 26),
+          const Text('Recent plants',
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          ...state.plants.take(3).map((plant) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.spa_rounded, color: forest),
+                title: Text(plant.displayName),
+                subtitle: Text(
+                    '${plant.visits.length} ${plant.visits.length == 1 ? 'visit' : 'visits'}'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: onJournal,
+              )),
+        ],
         const SizedBox(height: 28),
         const Text('Badges to earn',
             style: TextStyle(
