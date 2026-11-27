@@ -195,6 +195,7 @@ class _FloraAppState extends State<FloraApp> {
                                   child: const Text('Keep exploring'))),
                         ]))));
       } else {
+        final savedPlant = snapshot?.plantById(result.observation?.plantId);
         await showModalBottomSheet<void>(
             context: navigatorKey.currentContext!,
             showDragHandle: true,
@@ -207,9 +208,9 @@ class _FloraAppState extends State<FloraApp> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              result.observation?.speciesId == null
+                              savedPlant?.displayName == 'Unknown plant'
                                   ? 'Saved as Unknown'
-                                  : 'Added to your Journal',
+                                  : 'Saved ${savedPlant?.displayName ?? 'plant'}',
                               style: const TextStyle(
                                   fontSize: 29, fontWeight: FontWeight.w900)),
                           const SizedBox(height: 8),
@@ -355,6 +356,7 @@ class _ReviewPageState extends State<ReviewPage> {
   String? saveError;
   String search = '';
   final notes = TextEditingController();
+  final customName = TextEditingController();
 
   @override
   void initState() {
@@ -365,10 +367,11 @@ class _ReviewPageState extends State<ReviewPage> {
   @override
   void dispose() {
     notes.dispose();
+    customName.dispose();
     super.dispose();
   }
 
-  Future<void> save(String? speciesId) async {
+  Future<void> save(String? speciesId, {bool asUnknown = false}) async {
     if (saving) return;
     setState(() {
       saving = true;
@@ -378,6 +381,7 @@ class _ReviewPageState extends State<ReviewPage> {
       final result = await GameStore.instance.saveObservation(
           source: File(showOriginal ? photo.originalPath : photo.displayPath),
           speciesId: speciesId,
+          customName: asUnknown ? '' : customName.text,
           notes: notes.text);
       if (result.duplicateImage) {
         if (mounted) {
@@ -505,6 +509,18 @@ class _ReviewPageState extends State<ReviewPage> {
               ...matches.map((species) => _candidateTile(species)),
               const SizedBox(height: 14),
               TextField(
+                  controller: customName,
+                  maxLength: 80,
+                  onChanged: (_) => setState(() => selectedId = null),
+                  decoration: const InputDecoration(
+                      labelText: 'Or write your own plant name',
+                      hintText: 'Your unverified label')),
+              const SizedBox(height: 4),
+              const Text(
+                  'A name you enter yourself stays a personal label, not a verified identification.',
+                  style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
+              const SizedBox(height: 14),
+              TextField(
                   controller: notes,
                   minLines: 2,
                   maxLines: 4,
@@ -518,17 +534,19 @@ class _ReviewPageState extends State<ReviewPage> {
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
             child: Column(children: [
               FilledButton(
-                  onPressed: selectedId == null || saving
-                      ? null
-                      : () => save(selectedId),
+                  onPressed:
+                      (selectedId == null && customName.text.trim().isEmpty) ||
+                              saving
+                          ? null
+                          : () => save(selectedId),
                   style: FilledButton.styleFrom(
                       backgroundColor: FloraPalette.lime,
                       foregroundColor: ink,
                       minimumSize: const Size.fromHeight(54)),
-                  child: Text(saving ? 'Saving…' : 'Save plant to Plantdex',
+                  child: Text(saving ? 'Saving…' : 'Save plant',
                       style: const TextStyle(fontWeight: FontWeight.w900))),
               TextButton(
-                  onPressed: saving ? null : () => save(null),
+                  onPressed: saving ? null : () => save(null, asUnknown: true),
                   child: const Text('Not sure? Save photo as unknown',
                       style: TextStyle(fontWeight: FontWeight.w700))),
             ])),
@@ -543,7 +561,10 @@ class _ReviewPageState extends State<ReviewPage> {
         selected: selected,
         label: species.commonName,
         child: InkWell(
-          onTap: () => setState(() => selectedId = species.id),
+          onTap: () => setState(() {
+            selectedId = species.id;
+            customName.clear();
+          }),
           borderRadius: BorderRadius.circular(18),
           child: AnimatedContainer(
             duration: MediaQuery.disableAnimationsOf(context)

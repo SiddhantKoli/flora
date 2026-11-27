@@ -43,6 +43,13 @@ class GameSnapshot {
   final int weeklyProgress;
   final bool dailyClaimed;
   final bool weeklyClaimed;
+
+  PersonalPlant? plantById(String? id) {
+    for (final plant in plants) {
+      if (plant.id == id) return plant;
+    }
+    return null;
+  }
 }
 
 class GameStore {
