@@ -8,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import 'game_rules.dart';
 import 'observation.dart';
+import 'personal_plant.dart';
 import 'species.dart';
 
 class SaveResult {
@@ -25,6 +26,7 @@ class SaveResult {
 class GameSnapshot {
   const GameSnapshot(
       {required this.observations,
+      required this.plants,
       required this.unlockedIds,
       required this.xp,
       required this.achievements,
@@ -33,6 +35,7 @@ class GameSnapshot {
       required this.dailyClaimed,
       required this.weeklyClaimed});
   final List<Observation> observations;
+  final List<PersonalPlant> plants;
   final Set<String> unlockedIds;
   final int xp;
   final Set<String> achievements;
@@ -51,9 +54,11 @@ class GameStore {
     if (_database != null) return _database!;
     final file = p.join(await getDatabasesPath(), 'flora.db');
     return _database =
-        await openDatabase(file, version: 2, onCreate: (db, _) async {
+        await openDatabase(file, version: 3, onCreate: (db, _) async {
       await db.execute(
-          'CREATE TABLE observations (id TEXT PRIMARY KEY, image_path TEXT NOT NULL, image_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, local_day TEXT NOT NULL, local_week TEXT NOT NULL, species_id TEXT, status TEXT NOT NULL, notes TEXT NOT NULL DEFAULT "", reward_xp INTEGER NOT NULL DEFAULT 0)');
+          'CREATE TABLE personal_plants (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, species_id TEXT, custom_name TEXT NOT NULL DEFAULT "", nickname TEXT NOT NULL DEFAULT "", place_label TEXT NOT NULL DEFAULT "")');
+      await db.execute(
+          'CREATE TABLE observations (id TEXT PRIMARY KEY, plant_id TEXT, image_path TEXT NOT NULL, image_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL, local_day TEXT NOT NULL, local_week TEXT NOT NULL, species_id TEXT, status TEXT NOT NULL, notes TEXT NOT NULL DEFAULT "", reward_xp INTEGER NOT NULL DEFAULT 0)');
       await db.execute(
           'CREATE TABLE discoveries (species_id TEXT PRIMARY KEY, first_observation_id TEXT NOT NULL, discovered_at TEXT NOT NULL)');
       await db.execute(
@@ -68,6 +73,26 @@ class GameStore {
       if (oldVersion < 2) {
         await db.execute(
             'CREATE TABLE observation_photos (id TEXT PRIMARY KEY, observation_id TEXT NOT NULL, image_path TEXT NOT NULL, image_hash TEXT NOT NULL UNIQUE, created_at TEXT NOT NULL)');
+      }
+      if (oldVersion < 3) {
+        await db.execute(
+            'CREATE TABLE personal_plants (id TEXT PRIMARY KEY, created_at TEXT NOT NULL, species_id TEXT, custom_name TEXT NOT NULL DEFAULT "", nickname TEXT NOT NULL DEFAULT "", place_label TEXT NOT NULL DEFAULT "")');
+        await db.execute('ALTER TABLE observations ADD COLUMN plant_id TEXT');
+        final oldVisits = await db
+            .query('observations', columns: ['id', 'created_at', 'species_id']);
+        for (final visit in oldVisits) {
+          final plantId = const Uuid().v4();
+          await db.insert('personal_plants', {
+            'id': plantId,
+            'created_at': visit['created_at'],
+            'species_id': visit['species_id'],
+            'custom_name': '',
+            'nickname': '',
+            'place_label': '',
+          });
+          await db.update('observations', {'plant_id': plantId},
+              where: 'id = ?', whereArgs: [visit['id']]);
+        }
       }
     });
   }
@@ -85,6 +110,7 @@ class GameStore {
     final db = await database;
     final now = DateTime.now();
     final rows = await db.query('observations', orderBy: 'created_at DESC');
+    final plantRows = await db.query('personal_plants');
     final photoRows =
         await db.query('observation_photos', orderBy: 'created_at ASC');
     final photosByObservation = <String, List<String>>{};
@@ -107,14 +133,25 @@ class GameStore {
         where: 'key IN (?, ?)',
         whereArgs: ['daily:${_day(now)}', 'weekly:${_week(now)}']);
     final claimKeys = claims.map((row) => row['key'] as String).toSet();
+    final observations = rows
+        .map((row) => Observation.fromMap({
+              ...row,
+              'extra_image_paths': photosByObservation[row['id']] ?? <String>[],
+            }))
+        .toList();
+    final visitsByPlant = <String, List<Observation>>{};
+    for (final visit in observations) {
+      final id = visit.plantId;
+      if (id != null) visitsByPlant.putIfAbsent(id, () => []).add(visit);
+    }
+    final plants = plantRows
+        .map((row) => PersonalPlant.fromMap(
+            row, visitsByPlant[row['id']] ?? <Observation>[]))
+        .toList()
+      ..sort((a, b) => b.lastSeenAt.compareTo(a.lastSeenAt));
     return GameSnapshot(
-      observations: rows
-          .map((row) => Observation.fromMap({
-                ...row,
-                'extra_image_paths':
-                    photosByObservation[row['id']] ?? <String>[],
-              }))
-          .toList(),
+      observations: observations,
+      plants: plants,
       unlockedIds:
           discoveries.map((row) => row['species_id'] as String).toSet(),
       xp: (rewards.first['total'] as int?) ?? 0,
