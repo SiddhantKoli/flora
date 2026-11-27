@@ -4,6 +4,7 @@ class Observation {
     required this.imagePath,
     required this.createdAt,
     required this.status,
+    this.plantId,
     this.speciesId,
     this.notes = '',
     this.extraImagePaths = const [],
@@ -13,6 +14,7 @@ class Observation {
   final String imagePath;
   final DateTime createdAt;
   final String status;
+  final String? plantId;
   final String? speciesId;
   final String notes;
   final List<String> extraImagePaths;
@@ -26,6 +28,7 @@ class Observation {
         imagePath: map['image_path'] as String,
         createdAt: DateTime.parse(map['created_at'] as String),
         status: map['status'] as String,
+        plantId: map['plant_id'] as String?,
         speciesId: map['species_id'] as String?,
         notes: map['notes'] as String? ?? '',
         extraImagePaths:
