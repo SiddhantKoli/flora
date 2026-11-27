@@ -14,6 +14,7 @@ import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
 import 'features/backup/backup_page.dart';
 import 'features/journal/personal_journal_page.dart';
+import 'features/plantdex/explore_page.dart';
 import 'features/settings/settings_page.dart';
 import 'ui/flora_design.dart';
 
@@ -434,7 +435,7 @@ class _FloraAppState extends State<FloraApp> {
         }
         final state = snapshot!;
         final pages = <Widget>[
-          PlantdexPage(state: state, onScan: () => scan()),
+          ExplorePage(state: state, onAddPlant: () => scan()),
           PersonalJournalPage(
               state: state,
               onChanged: refresh,
