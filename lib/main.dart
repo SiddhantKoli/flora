@@ -357,6 +357,8 @@ class _ReviewPageState extends State<ReviewPage> {
   String search = '';
   final notes = TextEditingController();
   final customName = TextEditingController();
+  final nickname = TextEditingController();
+  final placeLabel = TextEditingController();
 
   @override
   void initState() {
@@ -368,6 +370,8 @@ class _ReviewPageState extends State<ReviewPage> {
   void dispose() {
     notes.dispose();
     customName.dispose();
+    nickname.dispose();
+    placeLabel.dispose();
     super.dispose();
   }
 
@@ -382,6 +386,8 @@ class _ReviewPageState extends State<ReviewPage> {
           source: File(showOriginal ? photo.originalPath : photo.displayPath),
           speciesId: speciesId,
           customName: asUnknown ? '' : customName.text,
+          nickname: nickname.text,
+          placeLabel: placeLabel.text,
           notes: notes.text);
       if (result.duplicateImage) {
         if (mounted) {
@@ -518,6 +524,24 @@ class _ReviewPageState extends State<ReviewPage> {
               const SizedBox(height: 4),
               const Text(
                   'A name you enter yourself stays a personal label, not a verified identification.',
+                  style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
+              const SizedBox(height: 14),
+              TextField(
+                  controller: nickname,
+                  maxLength: 60,
+                  decoration: const InputDecoration(
+                      labelText: 'Nickname for this plant (optional)',
+                      hintText: 'The balcony one')),
+              const SizedBox(height: 8),
+              TextField(
+                  controller: placeLabel,
+                  maxLength: 80,
+                  decoration: const InputDecoration(
+                      labelText: 'Where did you see it? (optional)',
+                      hintText: 'School garden')),
+              const SizedBox(height: 4),
+              const Text(
+                  'Place is a note you write. FLORA does not record GPS here.',
                   style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
               const SizedBox(height: 14),
               TextField(
