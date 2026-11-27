@@ -11,9 +11,10 @@ import 'game_store.dart';
 import 'species.dart';
 
 class BackupPreview {
-  const BackupPreview(this.observationCount, this.photoCount);
+  const BackupPreview(this.observationCount, this.photoCount, this.plantCount);
   final int observationCount;
   final int photoCount;
+  final int plantCount;
 }
 
 class BackupService {
@@ -84,11 +85,40 @@ class BackupService {
 
   BackupPreview inspect(Uint8List bytes) {
     final data = _decode(bytes);
+    final isV2 = data['version'] == 2;
+    final plantIds = <String>{};
+    if (isV2) {
+      for (final entry in _list(data, 'plants')) {
+        final plant = _map(entry);
+        final id = _string(plant, 'id');
+        if (!plantIds.add(id)) {
+          throw const FormatException('Duplicate plant in backup.');
+        }
+        _date(plant, 'created_at');
+        final speciesId = plant['species_id'];
+        if (speciesId != null &&
+            (speciesId is! String || speciesById(speciesId) == null)) {
+          throw const FormatException('Unknown catalog plant in backup.');
+        }
+        if (_string(plant, 'custom_name').length > 80 ||
+            _string(plant, 'nickname').length > 60 ||
+            _string(plant, 'place_label').length > 80) {
+          throw const FormatException('A plant label is too long.');
+        }
+      }
+    }
     var count = 0;
     final hashes = <String>{};
+    final visitIds = <String>{};
     for (final entry in _list(data, 'observations')) {
       final row = _map(entry);
       _validateObservation(row);
+      if (!visitIds.add(_string(row, 'id'))) {
+        throw const FormatException('Duplicate visit in backup.');
+      }
+      if (isV2 && !plantIds.contains(_string(row, 'plant_id'))) {
+        throw const FormatException('A visit has no matching plant.');
+      }
       final primary = _photoBytes(row['photo'], hashes);
       if (primary.isEmpty) throw const FormatException('Empty photo.');
       count++;
@@ -122,7 +152,8 @@ class BackupService {
       _string(item, 'key');
       _date(item, 'claimed_at');
     }
-    return BackupPreview(_list(data, 'observations').length, count);
+    return BackupPreview(_list(data, 'observations').length, count,
+        isV2 ? plantIds.length : visitIds.length);
   }
 
   Future<BackupPreview> restore(Uint8List bytes) async {
@@ -136,15 +167,42 @@ class BackupService {
     await directory.create(recursive: true);
     final newObservations = <Map<String, Object?>>[];
     final newPhotos = <Map<String, Object?>>[];
+    final newPlants = <Map<String, Object?>>[];
     try {
+      if (data['version'] == 2) {
+        for (final entry in _list(data, 'plants')) {
+          final row = _map(entry);
+          newPlants.add({
+            'id': _string(row, 'id'),
+            'created_at': _string(row, 'created_at'),
+            'species_id': row['species_id'],
+            'custom_name': _string(row, 'custom_name'),
+            'nickname': _string(row, 'nickname'),
+            'place_label': _string(row, 'place_label'),
+          });
+        }
+      }
       for (final entry in _list(data, 'observations')) {
         final row = _map(entry);
         final id = _string(row, 'id');
+        final plantId =
+            data['version'] == 2 ? _string(row, 'plant_id') : const Uuid().v4();
+        if (data['version'] == 1) {
+          newPlants.add({
+            'id': plantId,
+            'created_at': _string(row, 'created_at'),
+            'species_id': row['species_id'],
+            'custom_name': '',
+            'nickname': '',
+            'place_label': '',
+          });
+        }
         final primaryBytes = _photoBytes(row['photo'], null);
         final primaryPath = p.join(directory.path, '${const Uuid().v4()}.jpg');
         await File(primaryPath).writeAsBytes(primaryBytes, flush: true);
         newObservations.add({
           'id': id,
+          'plant_id': plantId,
           'image_path': primaryPath,
           'image_hash': sha256.convert(primaryBytes).toString(),
           'created_at': _string(row, 'created_at'),
@@ -177,12 +235,16 @@ class BackupService {
         for (final table in [
           'observation_photos',
           'observations',
+          'personal_plants',
           'discoveries',
           'rewards',
           'achievements',
           'quest_claims'
         ]) {
           await txn.delete(table);
+        }
+        for (final row in newPlants) {
+          await txn.insert('personal_plants', row);
         }
         for (final row in newObservations) {
           await txn.insert('observations', row);
@@ -228,7 +290,8 @@ class BackupService {
     }
     final decoded = jsonDecode(utf8.decode(bytes));
     final data = _map(decoded);
-    if (data['format'] != 'flora-journal' || data['version'] != 1) {
+    if (data['format'] != 'flora-journal' ||
+        (data['version'] != 1 && data['version'] != 2)) {
       throw const FormatException('This is not a supported FLORA backup.');
     }
     return data;

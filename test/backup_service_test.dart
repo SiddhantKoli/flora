@@ -6,7 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flora/data/backup_service.dart';
 
 void main() {
-  Uint8List backup({bool damaged = false, bool duplicate = false}) {
+  Uint8List backup(
+      {bool damaged = false, bool duplicate = false, bool v2 = false}) {
     final photoBytes = <int>[1, 2, 3, 4];
     final photo = {
       'base64': base64Encode(photoBytes),
@@ -14,10 +15,22 @@ void main() {
     };
     final data = {
       'format': 'flora-journal',
-      'version': 1,
+      'version': v2 ? 2 : 1,
+      if (v2)
+        'plants': [
+          {
+            'id': 'plant-one',
+            'created_at': '2026-11-26T00:00:00Z',
+            'species_id': null,
+            'custom_name': 'Purple vine',
+            'nickname': 'Balcony friend',
+            'place_label': 'Balcony',
+          }
+        ],
       'observations': [
         {
           'id': 'one',
+          if (v2) 'plant_id': 'plant-one',
           'created_at': '2026-11-26T00:00:00Z',
           'local_day': '2026-11-26',
           'local_week': '2026-11-23',
@@ -49,6 +62,13 @@ void main() {
     final preview = BackupService.instance.inspect(backup());
     expect(preview.observationCount, 1);
     expect(preview.photoCount, 1);
+    expect(preview.plantCount, 1);
+  });
+
+  test('new backup format links visits to personal plants', () {
+    final preview = BackupService.instance.inspect(backup(v2: true));
+    expect(preview.plantCount, 1);
+    expect(preview.observationCount, 1);
   });
 
   test('backup inspection rejects damaged photo bytes', () {

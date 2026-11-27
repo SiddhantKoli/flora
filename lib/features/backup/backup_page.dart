@@ -56,7 +56,7 @@ class _BackupPageState extends State<BackupPage> {
           builder: (dialogContext) => AlertDialog(
                 title: const Text('Replace your current journal?'),
                 content: Text(
-                    'This backup has ${preview.observationCount} entries and ${preview.photoCount} photos. Your $currentCount current entries, photos, and progress will be replaced. Export your current journal first if you want to keep it.'),
+                    'This backup has ${preview.plantCount} plants, ${preview.observationCount} visits, and ${preview.photoCount} photos. Your $currentCount current visits, photos, and progress will be replaced. Export your current journal first if you want to keep it.'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialogContext, false),
