@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../data/game_store.dart';
 import '../../data/observation.dart';
@@ -32,6 +33,7 @@ class _PersonalJournalPageState extends State<PersonalJournalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
     final plants = widget.state.plants.where((plant) {
       if (unknownOnly &&
           (plant.speciesId != null || plant.customName.isNotEmpty))
@@ -43,42 +45,50 @@ class _PersonalJournalPageState extends State<PersonalJournalPage> {
     }).toList();
     return CustomScrollView(slivers: [
       SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           sliver: SliverList(
               delegate: SliverChildListDelegate([
-            const Text('Your plants.',
-                style: TextStyle(
-                    fontSize: 38,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1.7)),
-            const SizedBox(height: 5),
-            Text(
-                '${widget.state.plants.length} plants · ${widget.state.observations.length} visits on this device',
-                style: const TextStyle(color: FloraPalette.muted)),
-            const SizedBox(height: 20),
+            const Text('Your field\nnotes.', style: FloraType.display),
+            const SizedBox(height: 10),
+            Text('Every plant has a story. Yours live here.',
+                style: FloraType.body.copyWith(color: FloraPalette.muted)),
+            const SizedBox(height: 24),
+            Row(children: [
+              Text('${widget.state.plants.length} plants',
+                  style: FloraType.title.copyWith(fontSize: 20)),
+              const SizedBox(width: 10),
+              Container(
+                  width: 4,
+                  height: 4,
+                  decoration: const BoxDecoration(
+                      color: FloraPalette.coral, shape: BoxShape.circle)),
+              const SizedBox(width: 10),
+              Text('${widget.state.observations.length} visits',
+                  style: FloraType.body.copyWith(color: FloraPalette.muted)),
+            ]),
+            const SizedBox(height: 18),
             if (widget.state.plants.isEmpty)
               _EmptyJournal(onAddPlant: widget.onAddPlant)
             else ...[
               TextField(
                   onChanged: (value) => setState(() => search = value),
                   decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search),
+                      prefixIcon: Icon(Icons.search_rounded),
                       labelText: 'Search your plants',
                       hintText: 'Name, place, or note')),
-              const SizedBox(height: 10),
-              Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilterChip(
-                      label: const Text('Unknown'),
-                      selected: unknownOnly,
-                      onSelected: (value) =>
-                          setState(() => unknownOnly = value))),
               const SizedBox(height: 14),
+              Row(children: [
+                _filter('All plants', false),
+                const SizedBox(width: 8),
+                _filter('Unknown', true),
+              ]),
+              const SizedBox(height: 18),
               if (plants.isEmpty)
-                const Padding(
-                    padding: EdgeInsets.all(24),
+                Padding(
+                    padding: const EdgeInsets.all(24),
                     child: Center(
-                        child: Text('No plants match. Try another search.'))),
+                        child: Text('No plants match. Try another search.',
+                            style: FloraType.body))),
             ],
           ]))),
       SliverPadding(
@@ -87,8 +97,8 @@ class _PersonalJournalPageState extends State<PersonalJournalPage> {
               itemCount: plants.length,
               itemBuilder: (context, index) {
                 final plant = plants[index];
-                return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
+                Widget card = Padding(
+                    padding: const EdgeInsets.only(bottom: 28),
                     child: _PlantCard(
                         plant: plant,
                         onTap: () async {
@@ -100,8 +110,33 @@ class _PersonalJournalPageState extends State<PersonalJournalPage> {
                                   onOpenVisit: widget.onOpenVisit)));
                           await widget.onChanged();
                         }));
+                if (!reduceMotion && index == 0) {
+                  card = card
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .slideY(begin: .04, end: 0, duration: 300.ms);
+                }
+                return card;
               })),
     ]);
+  }
+
+  Widget _filter(String label, bool selectedValue) {
+    final selected = unknownOnly == selectedValue;
+    return Material(
+        color: selected ? FloraPalette.ink : FloraPalette.surface,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+            onTap: () => setState(() => unknownOnly = selectedValue),
+            borderRadius: BorderRadius.circular(12),
+            child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                child: Text(label,
+                    style: FloraType.body.copyWith(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: selected ? Colors.white : FloraPalette.ink)))));
   }
 }
 
@@ -110,24 +145,39 @@ class _EmptyJournal extends StatelessWidget {
   final Future<void> Function() onAddPlant;
 
   @override
-  Widget build(BuildContext context) => Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-          color: FloraPalette.blue, borderRadius: BorderRadius.circular(26)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Icon(Icons.local_florist_rounded,
-            size: 64, color: FloraPalette.forest),
-        const SizedBox(height: 16),
-        const Text('Start with one plant.',
-            style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900)),
-        const SizedBox(height: 6),
-        const Text(
-            'Take a photo, give it a name if you know it, and come back to see how it changes.'),
-        const SizedBox(height: 18),
-        FilledButton.icon(
-            onPressed: onAddPlant,
-            icon: const Icon(Icons.add_a_photo_outlined),
-            label: const Text('Add your first plant')),
+  Widget build(BuildContext context) => ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: Stack(children: [
+        const Positioned.fill(
+            child: ExcludeSemantics(
+                child: Image(
+                    image: AssetImage('assets/images/flora_leaf_editorial.png'),
+                    fit: BoxFit.cover))),
+        const Positioned.fill(child: ColoredBox(color: Color(0x990B2424))),
+        Padding(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 250),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      const SizedBox(height: 72),
+                      Text('Start with one plant.',
+                          style: FloraType.title.copyWith(color: Colors.white)),
+                      const SizedBox(height: 8),
+                      Text(
+                          'Take a photo now. Come back later to see what changed.',
+                          style: FloraType.body.copyWith(color: Colors.white)),
+                      const SizedBox(height: 18),
+                      FilledButton.icon(
+                          onPressed: onAddPlant,
+                          style: FilledButton.styleFrom(
+                              backgroundColor: FloraPalette.coral,
+                              foregroundColor: FloraPalette.ink),
+                          icon: const Icon(Icons.photo_camera_outlined),
+                          label: const Text('Add your first plant')),
+                    ]))),
       ]));
 }
 
@@ -137,51 +187,71 @@ class _PlantCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(24),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-          onTap: onTap,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            AspectRatio(
-                aspectRatio: 1.85,
-                child: plant.latestVisit == null
-                    ? const ColoredBox(
-                        color: FloraPalette.lime,
-                        child: Icon(Icons.spa_rounded, size: 70))
-                    : Image.file(File(plant.latestVisit!.imagePath),
-                        fit: BoxFit.cover,
-                        cacheWidth: 900,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
-                            color: FloraPalette.lime,
-                            child: Center(
-                                child: Icon(Icons.broken_image_outlined,
-                                    size: 50))))),
-            Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-                child: Row(children: [
-                  Expanded(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        Text(plant.displayName,
-                            style: const TextStyle(
-                                fontSize: 21, fontWeight: FontWeight.w900)),
-                        if (plant.nickname.isNotEmpty)
-                          Text(plant.plantLabel,
-                              style:
-                                  const TextStyle(color: FloraPalette.muted)),
-                        const SizedBox(height: 4),
-                        Text(
-                            '${plant.visits.length} ${plant.visits.length == 1 ? 'visit' : 'visits'}${plant.placeLabel.isEmpty ? '' : ' · ${plant.placeLabel}'}',
-                            style: const TextStyle(color: FloraPalette.muted)),
-                      ])),
-                  const Icon(Icons.arrow_forward_rounded,
-                      color: FloraPalette.forest),
-                ])),
-          ])));
+  Widget build(BuildContext context) {
+    final date = plant.lastSeenAt.toLocal();
+    return Material(
+        color: Colors.transparent,
+        child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(18),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Stack(children: [
+                    AspectRatio(
+                        aspectRatio: 1.35,
+                        child: plant.latestVisit == null
+                            ? const ColoredBox(
+                                color: FloraPalette.mint,
+                                child: Icon(Icons.spa_outlined, size: 68))
+                            : Image.file(File(plant.latestVisit!.imagePath),
+                                fit: BoxFit.cover,
+                                cacheWidth: 1100,
+                                errorBuilder: (_, __, ___) => const ColoredBox(
+                                    color: FloraPalette.mint,
+                                    child: Center(
+                                        child: Icon(Icons.broken_image_outlined,
+                                            size: 46))))),
+                    Positioned(
+                        top: 14,
+                        left: 14,
+                        child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 7),
+                            decoration: BoxDecoration(
+                                color: FloraPalette.ink,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text(
+                                '${date.day}/${date.month}/${date.year}',
+                                style: FloraType.caption
+                                    .copyWith(color: Colors.white)))),
+                  ])),
+              const SizedBox(height: 14),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text(plant.displayName, style: FloraType.title),
+                      if (plant.nickname.isNotEmpty)
+                        Text(plant.plantLabel, style: FloraType.caption),
+                      const SizedBox(height: 4),
+                      Text(
+                          '${plant.visits.length} ${plant.visits.length == 1 ? 'visit' : 'visits'}'
+                          '${plant.placeLabel.isEmpty ? '' : '  /  ${plant.placeLabel}'}',
+                          style: FloraType.body.copyWith(
+                              color: FloraPalette.muted, fontSize: 13)),
+                    ])),
+                const Padding(
+                    padding: EdgeInsets.only(top: 4),
+                    child: Icon(Icons.arrow_outward_rounded,
+                        color: FloraPalette.signal, size: 25)),
+              ]),
+              const SizedBox(height: 18),
+              const Divider(height: 1, color: FloraPalette.line),
+            ])));
+  }
 }
 
 class PersonalPlantPage extends StatefulWidget {

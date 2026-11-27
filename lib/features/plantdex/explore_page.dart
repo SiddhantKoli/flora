@@ -195,7 +195,7 @@ class _HeroStory extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Spacer(),
+                        const SizedBox(height: 58),
                         const Text('Your world is growing.',
                             style: TextStyle(
                                 fontFamily: 'SpaceGrotesk',
