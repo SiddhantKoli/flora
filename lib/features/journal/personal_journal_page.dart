@@ -296,6 +296,39 @@ class _PersonalPlantPageState extends State<PersonalPlantPage> {
                         label: const Text('Add a visit'),
                         style: FilledButton.styleFrom(
                             minimumSize: const Size.fromHeight(54))),
+                    if (current.visits.length > 1) ...[
+                      const SizedBox(height: 28),
+                      const Text('THEN & NOW',
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: FloraPalette.forest,
+                              letterSpacing: 1)),
+                      const SizedBox(height: 6),
+                      const Text('Your first and latest photos of this plant.',
+                          style: TextStyle(color: FloraPalette.muted)),
+                      const SizedBox(height: 12),
+                      Row(children: [
+                        Expanded(
+                            child: _CompareVisit(
+                                label: 'FIRST',
+                                visit: current.visits.last,
+                                onTap: () async {
+                                  await widget.onOpenVisit(current.visits.last);
+                                  await reload();
+                                })),
+                        const SizedBox(width: 10),
+                        Expanded(
+                            child: _CompareVisit(
+                                label: 'LATEST',
+                                visit: current.visits.first,
+                                onTap: () async {
+                                  await widget
+                                      .onOpenVisit(current.visits.first);
+                                  await reload();
+                                })),
+                      ]),
+                    ],
                     const SizedBox(height: 26),
                     const Text('VISIT HISTORY',
                         style: TextStyle(
@@ -364,6 +397,50 @@ class _PersonalPlantPageState extends State<PersonalPlantPage> {
                 })),
       ]),
     );
+  }
+}
+
+class _CompareVisit extends StatelessWidget {
+  const _CompareVisit(
+      {required this.label, required this.visit, required this.onTap});
+  final String label;
+  final Observation visit;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = visit.createdAt.toLocal();
+    return Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+            onTap: onTap,
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              AspectRatio(
+                  aspectRatio: 1,
+                  child: Image.file(File(visit.imagePath),
+                      fit: BoxFit.cover,
+                      cacheWidth: 480,
+                      errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.broken_image_outlined)))),
+              Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label,
+                            style: const TextStyle(
+                                color: FloraPalette.forest,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 11,
+                                letterSpacing: 1)),
+                        Text('${date.day}/${date.month}/${date.year}',
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
+                      ])),
+            ])));
   }
 }
 
