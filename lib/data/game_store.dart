@@ -415,71 +415,119 @@ class GameStore {
   /// Previously earned XP stays earned; the Plantdex follows current labels.
   Future<void> updateObservation(String id,
       {required String? speciesId, required String notes}) async {
-    if (speciesId != null && speciesById(speciesId) == null) {
-      throw ArgumentError.value(speciesId, 'speciesId');
-    }
     final db = await database;
     await db.transaction((txn) async {
       final rows = await txn.query('observations',
-          columns: ['species_id'], where: 'id = ?', whereArgs: [id], limit: 1);
+          columns: ['plant_id'], where: 'id = ?', whereArgs: [id], limit: 1);
       if (rows.isEmpty) throw StateError('Observation no longer exists.');
-      final oldId = rows.first['species_id'] as String?;
-      await txn.update(
-          'observations',
-          {
-            'species_id': speciesId,
-            'status': speciesId == null ? 'unknown' : 'user_selected',
-            'notes': notes.trim(),
-          },
-          where: 'id = ?',
-          whereArgs: [id]);
-      if (oldId == speciesId) return;
-      if (oldId != null) {
-        final remaining = await txn.query('observations',
-            columns: ['id', 'created_at'],
-            where: 'species_id = ?',
-            whereArgs: [oldId],
-            orderBy: 'created_at ASC',
-            limit: 1);
-        if (remaining.isEmpty) {
-          await txn.delete('discoveries',
-              where: 'species_id = ?', whereArgs: [oldId]);
-        } else {
-          await txn.update(
-              'discoveries',
-              {
-                'first_observation_id': remaining.first['id'],
-                'discovered_at': remaining.first['created_at'],
-              },
-              where: 'species_id = ? AND first_observation_id = ?',
-              whereArgs: [oldId, id]);
-        }
-      }
-      if (speciesId != null) {
-        await txn.insert(
-            'discoveries',
-            {
-              'species_id': speciesId,
-              'first_observation_id': id,
-              'discovered_at': DateTime.now().toUtc().toIso8601String(),
-            },
-            conflictAlgorithm: ConflictAlgorithm.ignore);
-        final count = Sqflite.firstIntValue(
-                await txn.rawQuery('SELECT COUNT(*) FROM discoveries')) ??
-            0;
-        final now = DateTime.now().toUtc().toIso8601String();
-        if (count >= 1) {
-          await txn.insert(
-              'achievements', {'id': 'first_discovery', 'unlocked_at': now},
-              conflictAlgorithm: ConflictAlgorithm.ignore);
-        }
-        if (count >= 5) {
-          await txn.insert(
-              'achievements', {'id': 'five_species', 'unlocked_at': now},
-              conflictAlgorithm: ConflictAlgorithm.ignore);
-        }
-      }
+      await txn.update('observations', {'notes': notes.trim()},
+          where: 'id = ?', whereArgs: [id]);
+      final plantId = rows.first['plant_id'] as String?;
+      if (plantId == null) return;
+      final plants = await txn.query('personal_plants',
+          where: 'id = ?', whereArgs: [plantId], limit: 1);
+      if (plants.isEmpty) throw StateError('Plant no longer exists.');
+      final plant = plants.first;
+      await _writePlant(txn, plantId,
+          speciesId: speciesId,
+          customName: speciesId == null ? plant['custom_name'] as String : '',
+          nickname: plant['nickname'] as String,
+          placeLabel: plant['place_label'] as String);
     });
+  }
+
+  Future<void> updatePersonalPlant(String plantId,
+      {required String? speciesId,
+      required String customName,
+      required String nickname,
+      required String placeLabel}) async {
+    final db = await database;
+    await db.transaction((txn) => _writePlant(txn, plantId,
+        speciesId: speciesId,
+        customName: customName,
+        nickname: nickname,
+        placeLabel: placeLabel));
+  }
+
+  Future<void> _writePlant(Transaction txn, String plantId,
+      {required String? speciesId,
+      required String customName,
+      required String nickname,
+      required String placeLabel}) async {
+    if (speciesId != null && speciesById(speciesId) == null) {
+      throw ArgumentError.value(speciesId, 'speciesId');
+    }
+    if (customName.trim().length > 80 ||
+        nickname.trim().length > 60 ||
+        placeLabel.trim().length > 80) {
+      throw ArgumentError('A plant label is too long.');
+    }
+    final rows = await txn.query('personal_plants',
+        columns: ['species_id'],
+        where: 'id = ?',
+        whereArgs: [plantId],
+        limit: 1);
+    if (rows.isEmpty) throw StateError('Plant no longer exists.');
+    final oldId = rows.first['species_id'] as String?;
+    await txn.update(
+        'personal_plants',
+        {
+          'species_id': speciesId,
+          'custom_name': speciesId == null ? customName.trim() : '',
+          'nickname': nickname.trim(),
+          'place_label': placeLabel.trim(),
+        },
+        where: 'id = ?',
+        whereArgs: [plantId]);
+    if (oldId == speciesId) return;
+    await txn.update(
+        'observations',
+        {
+          'species_id': speciesId,
+          'status': speciesId == null ? 'unknown' : 'user_selected',
+        },
+        where: 'plant_id = ?',
+        whereArgs: [plantId]);
+    if (oldId != null) await _reconcileDiscovery(txn, oldId);
+    if (speciesId != null) {
+      await _reconcileDiscovery(txn, speciesId);
+      final count = Sqflite.firstIntValue(
+              await txn.rawQuery('SELECT COUNT(*) FROM discoveries')) ??
+          0;
+      final now = DateTime.now().toUtc().toIso8601String();
+      if (count >= 1) {
+        await txn.insert(
+            'achievements', {'id': 'first_discovery', 'unlocked_at': now},
+            conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+      if (count >= 5) {
+        await txn.insert(
+            'achievements', {'id': 'five_species', 'unlocked_at': now},
+            conflictAlgorithm: ConflictAlgorithm.ignore);
+      }
+    }
+  }
+
+  Future<void> _reconcileDiscovery(Transaction txn, String speciesId) async {
+    final visits = await txn.query('observations',
+        columns: ['id', 'created_at'],
+        where: 'species_id = ?',
+        whereArgs: [speciesId],
+        orderBy: 'created_at ASC',
+        limit: 1);
+    if (visits.isEmpty) {
+      await txn.delete('discoveries',
+          where: 'species_id = ?', whereArgs: [speciesId]);
+      return;
+    }
+    await txn.insert(
+        'discoveries',
+        {
+          'species_id': speciesId,
+          'first_observation_id': visits.first['id'],
+          'discovered_at': visits.first['created_at'],
+        },
+        conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
   Future<void> deleteObservation(Observation observation) async {
