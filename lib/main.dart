@@ -1404,7 +1404,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
         builder: (context) => AlertDialog(
               title: const Text('Delete observation?'),
               content: const Text(
-                  'The photo and note will be removed from this device. Earned XP and Plantdex discoveries stay in your collection.'),
+                  'This visit and its photos will be removed from this device. If it is the last visit, the personal plant page will also disappear. Earned XP and Plantdex discoveries stay.'),
               actions: [
                 TextButton(
                     onPressed: () => Navigator.pop(context, false),

@@ -481,16 +481,33 @@ class GameStore {
         columns: ['image_path'],
         where: 'observation_id = ?',
         whereArgs: [observation.id]);
-    await db.delete('observation_photos',
-        where: 'observation_id = ?', whereArgs: [observation.id]);
-    await db
-        .delete('observations', where: 'id = ?', whereArgs: [observation.id]);
+    await db.transaction((txn) async {
+      await txn.delete('observation_photos',
+          where: 'observation_id = ?', whereArgs: [observation.id]);
+      await txn
+          .delete('observations', where: 'id = ?', whereArgs: [observation.id]);
+      if (observation.plantId != null) {
+        final remaining = await txn.query('observations',
+            columns: ['id'],
+            where: 'plant_id = ?',
+            whereArgs: [observation.plantId],
+            limit: 1);
+        if (remaining.isEmpty) {
+          await txn.delete('personal_plants',
+              where: 'id = ?', whereArgs: [observation.plantId]);
+        }
+      }
+    });
     for (final path in [
       observation.imagePath,
       ...photos.map((row) => row['image_path'] as String)
     ]) {
       final image = File(path);
-      if (await image.exists()) await image.delete();
+      try {
+        if (await image.exists()) await image.delete();
+      } catch (_) {
+        // The journal no longer references this photo.
+      }
     }
   }
 }
