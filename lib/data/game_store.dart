@@ -164,9 +164,21 @@ class GameStore {
   }
 
   Future<SaveResult> saveObservation(
-      {required File source, String? speciesId, String notes = ''}) async {
+      {required File source,
+      String? plantId,
+      String? speciesId,
+      String customName = '',
+      String nickname = '',
+      String placeLabel = '',
+      String notes = ''}) async {
     if (speciesId != null && speciesById(speciesId) == null)
       throw ArgumentError.value(speciesId, 'speciesId');
+    if (customName.trim().length > 80 ||
+        nickname.trim().length > 60 ||
+        placeLabel.trim().length > 80 ||
+        notes.trim().length > 500) {
+      throw ArgumentError('A journal field is too long.');
+    }
     final bytes = await source.readAsBytes();
     if (bytes.isEmpty) throw StateError('The selected photo is empty.');
     final hash = sha256.convert(bytes).toString();
@@ -184,6 +196,8 @@ class GameStore {
 
     final now = DateTime.now();
     final id = const Uuid().v4();
+    final targetPlantId = plantId ?? const Uuid().v4();
+    var effectiveSpeciesId = speciesId;
     final directory = Directory(p.join(
         (await getApplicationDocumentsDirectory()).path, 'observations'));
     await directory.create(recursive: true);
@@ -194,14 +208,34 @@ class GameStore {
     var first = false;
     try {
       await db.transaction((txn) async {
-        if (speciesId != null) {
+        if (plantId == null) {
+          await txn.insert('personal_plants', {
+            'id': targetPlantId,
+            'created_at': now.toUtc().toIso8601String(),
+            'species_id': speciesId,
+            'custom_name': speciesId == null ? customName.trim() : '',
+            'nickname': nickname.trim(),
+            'place_label': placeLabel.trim(),
+          });
+        } else {
+          final plantRows = await txn.query('personal_plants',
+              columns: ['species_id'],
+              where: 'id = ?',
+              whereArgs: [plantId],
+              limit: 1);
+          if (plantRows.isEmpty) throw StateError('Plant no longer exists.');
+          effectiveSpeciesId = plantRows.first['species_id'] as String?;
+        }
+        if (effectiveSpeciesId != null) {
           final found = await txn.query('discoveries',
-              where: 'species_id = ?', whereArgs: [speciesId], limit: 1);
+              where: 'species_id = ?',
+              whereArgs: [effectiveSpeciesId],
+              limit: 1);
           first = found.isEmpty;
           final priorRepeat = await txn.query('observations',
               columns: ['id'],
               where: 'species_id = ? AND local_day = ? AND reward_xp = ?',
-              whereArgs: [speciesId, _day(now), repeatObservationXp],
+              whereArgs: [effectiveSpeciesId, _day(now), repeatObservationXp],
               limit: 1);
           reward = discoveryReward(
               firstDiscovery: first,
@@ -209,20 +243,21 @@ class GameStore {
         }
         await txn.insert('observations', {
           'id': id,
+          'plant_id': targetPlantId,
           'image_path': image.path,
           'image_hash': hash,
           'created_at': now.toUtc().toIso8601String(),
           'local_day': _day(now),
           'local_week': _week(now),
-          'species_id': speciesId,
-          'status': speciesId == null ? 'unknown' : 'user_selected',
+          'species_id': effectiveSpeciesId,
+          'status': effectiveSpeciesId == null ? 'unknown' : 'user_selected',
           'notes': notes.trim(),
           'reward_xp': reward,
         });
-        if (speciesId != null) {
+        if (effectiveSpeciesId != null) {
           if (first)
             await txn.insert('discoveries', {
-              'species_id': speciesId,
+              'species_id': effectiveSpeciesId,
               'first_observation_id': id,
               'discovered_at': now.toUtc().toIso8601String()
             });
@@ -262,8 +297,9 @@ class GameStore {
             id: id,
             imagePath: image.path,
             createdAt: now.toUtc(),
-            status: speciesId == null ? 'unknown' : 'user_selected',
-            speciesId: speciesId,
+            status: effectiveSpeciesId == null ? 'unknown' : 'user_selected',
+            plantId: targetPlantId,
+            speciesId: effectiveSpeciesId,
             notes: notes.trim()),
         xpEarned: reward,
         firstDiscovery: first,
