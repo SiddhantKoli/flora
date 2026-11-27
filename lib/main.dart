@@ -273,12 +273,19 @@ class _FloraAppState extends State<FloraApp> {
   void viewSavedEntry(BuildContext sheetContext, Observation? observation) {
     Navigator.pop(sheetContext);
     setState(() => tab = 1);
-    if (observation == null) return;
+    if (observation?.plantId == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       navigatorKey.currentState?.push(MaterialPageRoute(
-          builder: (_) =>
-              ObservationDetail(observation: observation, onChanged: refresh)));
+          builder: (_) => PersonalPlantPage(
+                plantId: observation!.plantId!,
+                onChanged: refresh,
+                onAddVisit: addVisit,
+                onOpenVisit: (visit) => navigatorKey.currentState!.push(
+                    MaterialPageRoute(
+                        builder: (_) => ObservationDetail(
+                            observation: visit, onChanged: refresh))),
+              )));
     });
   }
 
@@ -1204,170 +1211,6 @@ class QuestCard extends StatelessWidget {
               child: Text(claimed ? 'Claimed' : 'Claim reward',
                   style: const TextStyle(fontWeight: FontWeight.w800))),
         ]));
-  }
-}
-
-class JournalPage extends StatefulWidget {
-  const JournalPage(
-      {super.key,
-      required this.state,
-      required this.onChanged,
-      required this.onScan});
-  final GameSnapshot state;
-  final Future<void> Function() onChanged;
-  final Future<void> Function() onScan;
-
-  @override
-  State<JournalPage> createState() => _JournalPageState();
-}
-
-class _JournalPageState extends State<JournalPage> {
-  String search = '';
-  bool unknownOnly = false;
-
-  Future<void> openObservation(
-      BuildContext context, Observation observation) async {
-    await Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => ObservationDetail(
-            observation: observation, onChanged: widget.onChanged)));
-    await widget.onChanged();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final observations = widget.state.observations.where((observation) {
-      if (unknownOnly && observation.speciesId != null) return false;
-      final species = speciesById(observation.speciesId);
-      final text =
-          '${species?.commonName ?? 'Unknown plant'} ${species?.scientificName ?? ''} ${observation.notes}'
-              .toLowerCase();
-      return text.contains(search.trim().toLowerCase());
-    }).toList();
-    return ListView(
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 30),
-        children: [
-          const Text('Field notes.',
-              style: TextStyle(
-                  fontSize: 38,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1.7)),
-          const SizedBox(height: 6),
-          Text(
-              '${widget.state.observations.length} ${widget.state.observations.length == 1 ? 'moment' : 'moments'} kept on this device',
-              style: const TextStyle(color: FloraPalette.muted, fontSize: 15)),
-          const SizedBox(height: 22),
-          if (widget.state.observations.isEmpty)
-            Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                    color: FloraPalette.blue,
-                    borderRadius: BorderRadius.circular(26)),
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                          child: PlantIllustration(
-                              species: seedSpecies[2], scale: 1.1)),
-                      const SizedBox(height: 8),
-                      const Text('Every find has a story.',
-                          style: TextStyle(
-                              fontSize: 25,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.7)),
-                      const SizedBox(height: 6),
-                      const Text(
-                          'Your photos and little details will live here. Start with a plant that catches your eye.',
-                          style: TextStyle(fontSize: 14, height: 1.4)),
-                      const SizedBox(height: 18),
-                      FilledButton.icon(
-                          onPressed: widget.onScan,
-                          icon: const Icon(Icons.add_a_photo_outlined),
-                          label: const Text('Add your first plant')),
-                    ])),
-          if (widget.state.observations.isNotEmpty) ...[
-            TextField(
-                onChanged: (value) => setState(() => search = value),
-                decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    labelText: 'Search your journal',
-                    hintText: 'Plant name or note')),
-            const SizedBox(height: 10),
-            Align(
-                alignment: Alignment.centerLeft,
-                child: FilterChip(
-                    label: const Text('Unknown plants'),
-                    selected: unknownOnly,
-                    onSelected: (value) =>
-                        setState(() => unknownOnly = value))),
-            const SizedBox(height: 16),
-            const Text('YOUR MOMENTS',
-                style: TextStyle(
-                    color: FloraPalette.muted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1)),
-            const SizedBox(height: 12),
-            if (observations.isEmpty)
-              const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 28),
-                  child: Center(child: Text('No moments match your search.'))),
-            ...observations.map((observation) => ObservationTile(
-                observation: observation,
-                onTap: () => openObservation(context, observation))),
-          ],
-        ]);
-  }
-}
-
-class ObservationTile extends StatelessWidget {
-  const ObservationTile(
-      {super.key, required this.observation, required this.onTap});
-  final Observation observation;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final species = speciesById(observation.speciesId);
-    return Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            child: InkWell(
-              onTap: onTap,
-              borderRadius: BorderRadius.circular(20),
-              child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Row(children: [
-                    ClipRRect(
-                        borderRadius: BorderRadius.circular(13),
-                        child: Image.file(File(observation.imagePath),
-                            width: 66,
-                            height: 66,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => const SizedBox(
-                                width: 66,
-                                height: 66,
-                                child:
-                                    Icon(Icons.image_not_supported_outlined)))),
-                    const SizedBox(width: 13),
-                    Expanded(
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          Text(species?.commonName ?? 'Unknown plant',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w900, fontSize: 15)),
-                          const SizedBox(height: 4),
-                          Text(
-                              '${observation.createdAt.toLocal().day}/${observation.createdAt.toLocal().month}/${observation.createdAt.toLocal().year}  ·  ${species == null ? 'Unidentified' : 'Selected by you'}${observation.allImagePaths.length > 1 ? '  ·  ${observation.allImagePaths.length} photos' : ''}',
-                              style: const TextStyle(
-                                  color: FloraPalette.muted, fontSize: 12))
-                        ])),
-                    const Icon(Icons.arrow_forward_ios_rounded,
-                        color: FloraPalette.muted, size: 15),
-                  ])),
-            )));
   }
 }
 
