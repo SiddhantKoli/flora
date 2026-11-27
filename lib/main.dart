@@ -339,7 +339,11 @@ class _FloraAppState extends State<FloraApp> {
   @override
   Widget build(BuildContext context) {
     final scheme = ColorScheme.fromSeed(
-        seedColor: forest, primary: forest, surface: canvas);
+        seedColor: FloraPalette.signal,
+        primary: FloraPalette.signal,
+        onPrimary: Colors.white,
+        surface: FloraPalette.background,
+        onSurface: FloraPalette.ink);
     return MaterialApp(
       title: 'FLORA',
       navigatorKey: navigatorKey,
@@ -361,28 +365,58 @@ class _FloraAppState extends State<FloraApp> {
       },
       theme: ThemeData(
         useMaterial3: true,
+        fontFamily: 'DMSans',
         colorScheme: scheme,
         scaffoldBackgroundColor: canvas,
         textTheme: ThemeData.light()
             .textTheme
-            .apply(bodyColor: ink, displayColor: ink),
+            .apply(fontFamily: 'DMSans', bodyColor: ink, displayColor: ink),
         appBarTheme: const AppBarTheme(
             backgroundColor: canvas,
             foregroundColor: ink,
+            centerTitle: false,
+            titleTextStyle: FloraType.title,
             surfaceTintColor: Colors.transparent),
         cardTheme: CardThemeData(
             color: Colors.white,
             elevation: 0,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(22))),
+                borderRadius: BorderRadius.circular(18))),
+        filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+                backgroundColor: FloraPalette.ink,
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(
+                    fontFamily: 'DMSans',
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                minimumSize: const Size(48, 52))),
+        outlinedButtonTheme: OutlinedButtonThemeData(
+            style: OutlinedButton.styleFrom(
+                foregroundColor: FloraPalette.ink,
+                textStyle: const TextStyle(
+                    fontFamily: 'DMSans', fontWeight: FontWeight.w700),
+                side: const BorderSide(color: FloraPalette.line),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+                minimumSize: const Size(48, 48))),
         inputDecorationTheme: InputDecorationTheme(
             filled: true,
             fillColor: Colors.white,
             contentPadding:
                 const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(18),
-                borderSide: BorderSide.none)),
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: FloraPalette.line)),
+            enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: FloraPalette.line)),
+            focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide:
+                    const BorderSide(color: FloraPalette.signal, width: 2))),
       ),
       home: Builder(builder: (context) {
         if (loadError != null) {
