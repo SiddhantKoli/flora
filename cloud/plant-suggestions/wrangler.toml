@@ -1,0 +1,5 @@
+name = "flora-plant-suggestions"
+main = "src/index.mjs"
+compatibility_date = "2026-11-28"
+
+# Set PLANTNET_API_KEY as a Worker secret, never in this file or the APK.
