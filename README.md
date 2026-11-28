@@ -40,7 +40,13 @@ Field Cam is built from Flutter widgets and painting around a live camera previe
 
 ## Screenshots
 
-Screenshots from the earlier interface have been removed. New emulator screenshots will be added after the redesigned screens are visually checked.
+Captured on the Android emulator after the Field Notes redesign:
+
+<img src="docs/screenshots/explore.png" alt="Explore" width="220" />
+<img src="docs/screenshots/journal.png" alt="Journal" width="220" />
+<img src="docs/screenshots/quests.png" alt="Quests" width="220" />
+<img src="docs/screenshots/profile.png" alt="Profile" width="220" />
+<img src="docs/screenshots/camera.png" alt="Field Cam live preview" width="220" />
 
 ## Before release
 
