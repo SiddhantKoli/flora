@@ -114,13 +114,15 @@ class _FloraAppState extends State<FloraApp> {
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Welcome to FLORA',
-                            style: TextStyle(
-                                fontSize: 30, fontWeight: FontWeight.w900)),
+                        const Text('FIELD NOTES / 001',
+                            style: FloraType.caption),
+                        const SizedBox(height: 8),
+                        const Text('Go outside.\nLook closer.',
+                            style: FloraType.display),
                         const SizedBox(height: 12),
                         const Text(
                             'A little field journal for plants you notice.',
-                            style: TextStyle(fontSize: 16)),
+                            style: FloraType.body),
                         const SizedBox(height: 20),
                         const ListTile(
                             leading: Icon(Icons.photo_camera_outlined),
@@ -187,22 +189,15 @@ class _FloraAppState extends State<FloraApp> {
                               height: 190,
                               width: double.infinity,
                               decoration: BoxDecoration(
-                                  color: FloraPalette.lime,
-                                  borderRadius: BorderRadius.circular(24)),
+                                  color: FloraPalette.mint,
+                                  borderRadius: BorderRadius.circular(8)),
                               child: Center(child: _speciesArt(species))),
                           const SizedBox(height: 20),
                           Text('NEW DISCOVERY  ·  +${result.xpEarned} XP',
-                              style: const TextStyle(
-                                  color: forest,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 1)),
+                              style: FloraType.caption),
                           const SizedBox(height: 6),
                           Text(species?.commonName ?? 'Plant',
-                              style: const TextStyle(
-                                  fontSize: 30,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -1)),
+                              style: FloraType.display),
                           const SizedBox(height: 8),
                           const Text(
                               'Added to your Plantdex. This is your selection, not an expert identification.',
@@ -244,8 +239,7 @@ class _FloraAppState extends State<FloraApp> {
                               savedPlant?.displayName == 'Unknown plant'
                                   ? 'Saved as Unknown'
                                   : 'Saved ${savedPlant?.displayName ?? 'plant'}',
-                              style: const TextStyle(
-                                  fontSize: 29, fontWeight: FontWeight.w900)),
+                              style: FloraType.display.copyWith(fontSize: 31)),
                           const SizedBox(height: 8),
                           Text(
                               result.xpEarned > 0
@@ -324,9 +318,15 @@ class _FloraAppState extends State<FloraApp> {
     });
   }
 
-  Widget _speciesArt(Species? species) => species == null
-      ? const Icon(Icons.spa_rounded, size: 90, color: forest)
-      : PlantIllustration(species: species, scale: 1.05);
+  Widget _speciesArt(Species? species) => Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.spa_rounded, size: 64, color: FloraPalette.night),
+          const SizedBox(height: 10),
+          Text(species?.commonName.toUpperCase() ?? 'NEW FIND',
+              style: FloraType.caption.copyWith(color: FloraPalette.night)),
+        ],
+      );
 
   Future<void> claim(String kind) async {
     final xp = await GameStore.instance.claimQuest(kind);
@@ -948,8 +948,8 @@ class _ObservationDetailState extends State<ObservationDetail> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            title: const Text('Field note',
-                style: TextStyle(fontWeight: FontWeight.w900)),
+            title: Text('Field note',
+                style: FloraType.title.copyWith(fontSize: 21)),
             actions: [
               IconButton(
                   onPressed: delete,
@@ -957,6 +957,8 @@ class _ObservationDetailState extends State<ObservationDetail> {
                   tooltip: 'Delete observation')
             ]),
         body: ListView(padding: const EdgeInsets.all(20), children: [
+          const Text('YOUR FIELD RECORD', style: FloraType.caption),
+          const SizedBox(height: 10),
           Semantics(
               button: true,
               label: 'Open full photo',
@@ -984,7 +986,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
                                         color: Colors.white)))
                           ])))),
                   child: ClipRRect(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(8),
                       child: Image.file(File(selectedPhotoPath),
                           height: 260,
                           width: double.infinity,
@@ -1012,7 +1014,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
                                 border: Border.all(
                                     color:
                                         selectedPhotoPath == imagePaths[index]
-                                            ? forest
+                                            ? FloraPalette.signal
                                             : Colors.transparent,
                                     width: 2)),
                             child: ClipRRect(
@@ -1036,26 +1038,19 @@ class _ObservationDetailState extends State<ObservationDetail> {
           const SizedBox(height: 10),
           Text(
               'Observed ${widget.observation.createdAt.toLocal().day}/${widget.observation.createdAt.toLocal().month}/${widget.observation.createdAt.toLocal().year}  ·  Tap photo to inspect',
-              style: const TextStyle(color: FloraPalette.muted, fontSize: 13)),
+              style: FloraType.caption),
           const SizedBox(height: 12),
           Text(
               widget.observation.speciesId == null
                   ? 'PERSONAL PLANT'
                   : 'SELECTED BY YOU',
-              style: const TextStyle(
-                  color: forest,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                  fontSize: 11)),
+              style: FloraType.caption),
           const SizedBox(height: 6),
           Text(
               widget.plantName ??
                   speciesById(widget.observation.speciesId)?.commonName ??
                   'Unknown plant',
-              style: const TextStyle(
-                  fontSize: 31,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -1)),
+              style: FloraType.display.copyWith(fontSize: 32)),
           const SizedBox(height: 4),
           Text(
               speciesById(widget.observation.speciesId)?.scientificName ??
@@ -1067,8 +1062,7 @@ class _ObservationDetailState extends State<ObservationDetail> {
               'Edit this plant’s name and place from its journal page. Names are selected by you, not verified by FLORA.',
               style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
           const SizedBox(height: 21),
-          const Text('Your field note',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900)),
+          const Text('Your field note', style: FloraType.title),
           const SizedBox(height: 10),
           TextField(
               controller: notes,
@@ -1104,8 +1098,8 @@ class _ObservationDetailState extends State<ObservationDetail> {
                       }
                     },
               style: FilledButton.styleFrom(
-                  backgroundColor: FloraPalette.lime,
-                  foregroundColor: ink,
+                  backgroundColor: FloraPalette.signal,
+                  foregroundColor: Colors.white,
                   minimumSize: const Size.fromHeight(52)),
               child: Text(saving ? 'Saving...' : 'Save changes',
                   style: TextStyle(fontWeight: FontWeight.w900))),

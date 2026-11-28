@@ -13,7 +13,7 @@ flutter run
 
 ## What the app currently does
 
-- Opens on the Plantdex and provides a center **Add a plant** camera action. New observations require a photo taken in the in-app Atomic Purple FLORA Cam; gallery imports are unavailable. The camera has a square viewfinder, front/rear switching, five subtle digicam-inspired looks in the gear menu, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
+- Opens on **Explore**, a photo-led Plantdex, with a center **Add a plant** camera action. New observations require a photo taken in FLORA; gallery imports are unavailable. Field Cam has a square live viewfinder, front/rear switching, five subtle digicam-inspired looks, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
 - Shows the selected photo for review. You can retake it, search the small sample catalog and manually choose a plant, give it your own unverified name, or save it as unknown. An optional nickname, place label, and field note make the entry personal. The place label is typed by the user; FLORA does not record GPS. When a camera look is applied, review lets you save the edited copy or the original. If saving fails or the photo is a duplicate, review stays open with a visible recovery message.
 - On first run, explains camera capture, manual naming, and local storage, with a direct path to the first plant. A save confirmation shows the earned XP or saved count and can open the exact saved entry.
 - Groups dated visits around each personal plant in a photo-led Journal. You can revisit the same plant with a new in-app camera photo, search names, places, and notes, filter unknown plants, edit its name/nickname/place, and review its timeline. Each visit can hold extra in-app photos, a note, and a zoomable photo view. You can edit a visit note or delete a visit; deleting the last visit also removes its plant page. Name corrections apply to all visits for that plant and update the Plantdex without awarding XP again. Earned XP remains after deleting a visit.
@@ -34,17 +34,13 @@ Plant selection is user-provided. FLORA does **not** identify plants from photos
 - Cloud backup and account sign-in. Exporting and restoring a local backup file can transfer data, but unsaved local data may be lost on uninstall or device loss.
 - Social features, notifications, and a more developed progression and reward system.
 
-The UI has Plantdex, Journal, Quests, and profile tabs with a soft neutral palette, bright accents, original simple illustrations, and optional entrance animations. Settings is available from Profile. The Journal screenshot below may show an earlier layout; the current Journal is organized by personal plant.
+The Field Notes redesign uses photographic layouts, bundled Space Grotesk and DM Sans fonts, paper and midnight surfaces, signal blue and coral accents, and short optional `flutter_animate` transitions. Explore, Journal, Quests, profile, camera, review, and settings follow this visual system. The decorative leaf image on Explore was generated for FLORA and is not a plant identification reference. Settings is available from Profile.
 
-The Atomic Purple camera shell recreates the supplied reference with Flutter widgets and vector painting: layered acrylic edges, circuitry, chips, screws, raised controls, sticker, and light reflections. No screenshot is used as a camera overlay; the square center remains a live camera preview. Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
+Field Cam is built from Flutter widgets and painting around a live camera preview. Camera looks are creative effects inspired by the general feel of compact digital cameras. They are not official Canon or Sony modes. The live preview approximates the saved treatment; grain appears only after capture. Camera behavior and image processing still need testing on physical devices, especially lower-end phones.
 
 ## Screenshots
 
-<img src="docs/screenshots/camera.png" alt="Atomic Purple FLORA Cam" width="220" />
-<img src="docs/screenshots/plantdex.png" alt="Plantdex" width="220" />
-<img src="docs/screenshots/journal.png" alt="Journal" width="220" />
-<img src="docs/screenshots/quests.png" alt="Quests" width="220" />
-<img src="docs/screenshots/profile.png" alt="Profile" width="220" />
+Screenshots from the earlier interface have been removed. New emulator screenshots will be added after the redesigned screens are visually checked.
 
 ## Before release
 
