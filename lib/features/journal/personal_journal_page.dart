@@ -583,7 +583,7 @@ class _EditPlantSheetState extends State<_EditPlantSheet> {
                         TextStyle(fontSize: 27, fontWeight: FontWeight.w900)),
                 const SizedBox(height: 6),
                 const Text(
-                    'Names are chosen by you. FLORA does not identify plants.',
+                    'Names stay your choice. Model suggestions, when available, are not verified identifications.',
                     style: TextStyle(color: FloraPalette.muted)),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(

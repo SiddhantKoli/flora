@@ -8,8 +8,8 @@ import 'camera_look.dart';
 import 'look_baker.dart';
 
 /// "Add a plant" camera. Hands the result to FLORA's existing review flow via
-/// [onPhotoReady]. It does not identify plants; the user picks one manually
-/// on the review step.
+/// [onPhotoReady]. Optional cloud suggestions happen later in review, only
+/// after the user asks for them.
 class AddPlantCameraScreen extends StatefulWidget {
   const AddPlantCameraScreen({
     super.key,
