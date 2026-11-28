@@ -301,45 +301,50 @@ class _PersonalPlantPageState extends State<PersonalPlantPage> {
           body: const Center(
               child: Text('This plant is no longer in your journal.')));
     return Scaffold(
-      appBar: AppBar(title: const Text('Plant journal'), actions: [
-        IconButton(
-            tooltip: 'Edit plant details',
-            onPressed: () async {
-              await showModalBottomSheet<void>(
-                  context: context,
-                  isScrollControlled: true,
-                  showDragHandle: true,
-                  builder: (_) => _EditPlantSheet(
-                      plant: current,
-                      onSaved: () async {
-                        await widget.onChanged();
-                        await reload();
-                      }));
-            },
-            icon: const Icon(Icons.edit_outlined)),
-      ]),
+      appBar: AppBar(
+          title: Text('Plant journal',
+              style: FloraType.title.copyWith(fontSize: 21)),
+          actions: [
+            IconButton(
+                tooltip: 'Edit plant details',
+                onPressed: () async {
+                  await showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      showDragHandle: true,
+                      builder: (_) => _EditPlantSheet(
+                          plant: current,
+                          onSaved: () async {
+                            await widget.onChanged();
+                            await reload();
+                          }));
+                },
+                icon: const Icon(Icons.edit_outlined)),
+          ]),
       body: CustomScrollView(slivers: [
         SliverToBoxAdapter(
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           if (current.latestVisit != null)
-            AspectRatio(
-                aspectRatio: 1.1,
-                child: Image.file(File(current.latestVisit!.imagePath),
-                    fit: BoxFit.cover,
-                    cacheWidth: 1200,
-                    errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(Icons.broken_image_outlined)))),
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: AspectRatio(
+                        aspectRatio: 1.1,
+                        child: Image.file(File(current.latestVisit!.imagePath),
+                            fit: BoxFit.cover,
+                            cacheWidth: 1200,
+                            errorBuilder: (_, __, ___) => const Center(
+                                child: Icon(Icons.broken_image_outlined)))))),
           Padding(
               padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(current.displayName,
-                        style: const TextStyle(
-                            fontSize: 35,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1)),
+                    const Text('FIELD RECORD', style: FloraType.caption),
+                    const SizedBox(height: 8),
+                    Text(current.displayName, style: FloraType.display),
                     if (current.nickname.isNotEmpty)
                       Text(current.plantLabel,
                           style: const TextStyle(
@@ -400,12 +405,7 @@ class _PersonalPlantPageState extends State<PersonalPlantPage> {
                       ]),
                     ],
                     const SizedBox(height: 26),
-                    const Text('VISIT HISTORY',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            color: FloraPalette.forest,
-                            letterSpacing: 1)),
+                    const Text('VISIT HISTORY', style: FloraType.caption),
                   ])),
         ])),
         SliverPadding(
@@ -419,9 +419,9 @@ class _PersonalPlantPageState extends State<PersonalPlantPage> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Material(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(18),
+                          borderRadius: BorderRadius.circular(8),
                           child: InkWell(
-                              borderRadius: BorderRadius.circular(18),
+                              borderRadius: BorderRadius.circular(8),
                               onTap: () async {
                                 await widget.onOpenVisit(visit);
                                 await reload();
@@ -430,7 +430,7 @@ class _PersonalPlantPageState extends State<PersonalPlantPage> {
                                   padding: const EdgeInsets.all(10),
                                   child: Row(children: [
                                     ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
+                                        borderRadius: BorderRadius.circular(5),
                                         child: Image.file(File(visit.imagePath),
                                             width: 74,
                                             height: 74,

@@ -80,10 +80,19 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Settings')),
+        appBar: AppBar(
+            title: Text('Settings',
+                style: FloraType.title.copyWith(fontSize: 21))),
         body: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 36),
             children: [
+              const Text('MAKE IT YOURS', style: FloraType.caption),
+              const SizedBox(height: 8),
+              const Text('Your space.\nYour pace.', style: FloraType.display),
+              const SizedBox(height: 10),
+              Text('A few useful controls for your field journal.',
+                  style: FloraType.body.copyWith(color: FloraPalette.muted)),
+              const SizedBox(height: 30),
               const _Heading('Make it comfortable'),
               SwitchListTile(
                   contentPadding: EdgeInsets.zero,
@@ -103,7 +112,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       ? null
                       : (value) =>
                           change(preferences.copyWith(reducedMotion: value))),
-              const Divider(height: 34),
+              const Divider(height: 42, color: FloraPalette.line),
               const _Heading('Photos & privacy'),
               const ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -123,7 +132,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Text('Place notes'),
                   subtitle: Text(
                       'Places are labels you type. FLORA does not record GPS for plant visits.')),
-              const Divider(height: 34),
+              const Divider(height: 42, color: FloraPalette.line),
               const _Heading('Your data'),
               OutlinedButton.icon(
                   onPressed: busy
@@ -139,14 +148,14 @@ class _SettingsPageState extends State<SettingsPage> {
               OutlinedButton.icon(
                   onPressed: busy ? null : clear,
                   style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red.shade800),
+                      foregroundColor: FloraPalette.coral),
                   icon: const Icon(Icons.delete_outline_rounded),
                   label: const Text('Delete local data')),
               if (error != null)
                 Padding(
                     padding: const EdgeInsets.only(top: 12),
                     child: Text(error!,
-                        style: TextStyle(color: Colors.red.shade800))),
+                        style: const TextStyle(color: FloraPalette.coral))),
             ]),
       );
 }
@@ -157,9 +166,5 @@ class _Heading extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
       padding: const EdgeInsets.only(bottom: 6),
-      child: Text(label,
-          style: const TextStyle(
-              color: FloraPalette.forest,
-              fontSize: 20,
-              fontWeight: FontWeight.w900)));
+      child: Text(label, style: FloraType.title.copyWith(fontSize: 22)));
 }

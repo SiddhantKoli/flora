@@ -85,31 +85,36 @@ class _BackupPageState extends State<BackupPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Your data')),
+        appBar: AppBar(
+            title: Text('Your data',
+                style: FloraType.title.copyWith(fontSize: 21))),
         body: SafeArea(
             child: ListView(padding: const EdgeInsets.all(20), children: [
-          const Text('Keep your finds.',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.w900)),
+          const Text('YOUR ARCHIVE', style: FloraType.caption),
           const SizedBox(height: 8),
-          const Text(
+          const Text('Keep your\nfield notes.', style: FloraType.display),
+          const SizedBox(height: 8),
+          Text(
               'FLORA keeps your photos and progress on this phone. Save a backup before reinstalling or changing devices.',
-              style: TextStyle(color: FloraPalette.muted, height: 1.45)),
+              style: FloraType.body.copyWith(color: FloraPalette.muted)),
           const SizedBox(height: 24),
           Card(
+              color: FloraPalette.night,
               child: Padding(
                   padding: const EdgeInsets.all(20),
                   child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Icon(Icons.save_alt_rounded,
-                            size: 30, color: FloraPalette.forest),
+                            size: 30, color: FloraPalette.mint),
                         const SizedBox(height: 12),
-                        const Text('Export journal',
-                            style: TextStyle(
-                                fontSize: 21, fontWeight: FontWeight.w900)),
+                        Text('Export journal',
+                            style:
+                                FloraType.title.copyWith(color: Colors.white)),
                         const SizedBox(height: 6),
                         const Text(
-                            'Save one FLORA backup file with your entries, photos, and progress.'),
+                            'Save one FLORA backup file with your entries, photos, and progress.',
+                            style: TextStyle(color: Colors.white70)),
                         const SizedBox(height: 16),
                         FilledButton(
                             onPressed: busy ? null : export,
@@ -125,9 +130,7 @@ class _BackupPageState extends State<BackupPage> {
                         const Icon(Icons.restore_rounded,
                             size: 30, color: FloraPalette.forest),
                         const SizedBox(height: 12),
-                        const Text('Restore journal',
-                            style: TextStyle(
-                                fontSize: 21, fontWeight: FontWeight.w900)),
+                        const Text('Restore journal', style: FloraType.title),
                         const SizedBox(height: 6),
                         const Text(
                             'Choose a FLORA backup. You can review its contents before replacing this phone’s journal.'),
