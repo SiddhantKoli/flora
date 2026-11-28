@@ -1,5 +1,10 @@
 # FLORA cloud plant suggestions
 
+Current deployment: `https://flora-plant-suggestions.plant-suggestions.workers.dev`.
+Pass this root URL as `FLORA_IDENTIFY_ENDPOINT` with Flutter's `--dart-define`
+when building or running the app. The `/health` endpoint reports whether the
+Worker secret is configured.
+
 This Cloudflare Worker keeps the Pl@ntNet API key off the phone. FLORA sends a
 camera capture only after the user taps **Find plant suggestions**. The Worker
 forwards the photo to Pl@ntNet, returns up to five names and scores, and does

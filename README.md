@@ -11,7 +11,13 @@ flutter pub get
 flutter run
 ```
 
-Plant suggestions require a deployed proxy and an API key. See [cloud/plant-suggestions/README.md](cloud/plant-suggestions/README.md). Without it, the manual naming and Unknown flows continue to work.
+The optional plant suggestion Worker is deployed at `https://flora-plant-suggestions.plant-suggestions.workers.dev`. To enable suggestions in a local run, use:
+
+```sh
+flutter run --dart-define=FLORA_IDENTIFY_ENDPOINT=https://flora-plant-suggestions.plant-suggestions.workers.dev
+```
+
+The Pl@ntNet key is stored as a Cloudflare Worker secret and is never included in the app. See [cloud/plant-suggestions/README.md](cloud/plant-suggestions/README.md) for deployment and limits. Builds without the endpoint still support manual naming and Unknown.
 
 ## What the app currently does
 
