@@ -13,6 +13,7 @@ import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
 import 'features/identification/plant_suggestion_service.dart';
 import 'features/journal/personal_journal_page.dart';
+import 'features/onboarding/first_plant_guide.dart';
 import 'features/plantdex/explore_page.dart';
 import 'features/quests/progress_page.dart';
 import 'features/profile/field_profile_page.dart';
@@ -113,51 +114,7 @@ class _FloraAppState extends State<FloraApp> {
           isScrollControlled: true,
           showDragHandle: true,
           backgroundColor: canvas,
-          builder: (sheetContext) => SafeArea(
-              child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 28),
-                  child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('FIELD NOTES / 001',
-                            style: FloraType.caption),
-                        const SizedBox(height: 8),
-                        const Text('Go outside.\nLook closer.',
-                            style: FloraType.display),
-                        const SizedBox(height: 12),
-                        const Text(
-                            'A little field journal for plants you notice.',
-                            style: FloraType.body),
-                        const SizedBox(height: 20),
-                        const ListTile(
-                            leading: Icon(Icons.photo_camera_outlined),
-                            title: Text('Take a photo in FLORA'),
-                            subtitle: Text(
-                                'Photos are captured in the app; gallery imports are unavailable.')),
-                        const ListTile(
-                            leading: Icon(Icons.edit_outlined),
-                            title:
-                                Text('Check a suggestion, or choose Unknown'),
-                            subtitle: Text(
-                                'When connected, the model can suggest names. You choose what to save and can correct it later.')),
-                        const ListTile(
-                            leading: Icon(Icons.phone_android_outlined),
-                            title: Text('Keep your finds on this phone'),
-                            subtitle: Text(
-                                'Your journal stays on this device. A photo is sent for suggestions only when you ask. Export a backup before changing phones.')),
-                        const SizedBox(height: 18),
-                        FilledButton(
-                            onPressed: () => Navigator.pop(sheetContext, true),
-                            style: FilledButton.styleFrom(
-                                minimumSize: const Size.fromHeight(52)),
-                            child: const Text('Add my first plant')),
-                        Center(
-                            child: TextButton(
-                                onPressed: () =>
-                                    Navigator.pop(sheetContext, false),
-                                child: const Text('Explore first'))),
-                      ]))));
+          builder: (_) => const FirstPlantGuide());
       await marker.writeAsString('1');
       if (start == true && mounted) await scan();
     });
@@ -177,6 +134,8 @@ class _FloraAppState extends State<FloraApp> {
       if (result == null || !mounted) return;
       await refresh();
       if (!mounted) return;
+      final firstEntry =
+          snapshot?.plants.length == 1 && snapshot?.observations.length == 1;
       if (result.duplicateImage) {
         message('This photo is already in your journal. No XP was added.');
       } else if (result.firstDiscovery) {
@@ -200,7 +159,10 @@ class _FloraAppState extends State<FloraApp> {
                                   borderRadius: BorderRadius.circular(8)),
                               child: Center(child: _speciesArt(species))),
                           const SizedBox(height: 20),
-                          Text('NEW DISCOVERY  ·  +${result.xpEarned} XP',
+                          Text(
+                              firstEntry
+                                  ? 'FIRST FIELD NOTE  ·  +${result.xpEarned} XP'
+                                  : 'NEW DISCOVERY  ·  +${result.xpEarned} XP',
                               style: FloraType.caption),
                           const SizedBox(height: 6),
                           Text(species?.commonName ?? 'Plant',
@@ -243,9 +205,11 @@ class _FloraAppState extends State<FloraApp> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                              savedPlant?.displayName == 'Unknown plant'
-                                  ? 'Saved as Unknown'
-                                  : 'Saved ${savedPlant?.displayName ?? 'plant'}',
+                              firstEntry
+                                  ? 'Your first field note!'
+                                  : savedPlant?.displayName == 'Unknown plant'
+                                      ? 'Saved as Unknown'
+                                      : 'Saved ${savedPlant?.displayName ?? 'plant'}',
                               style: FloraType.display.copyWith(fontSize: 31)),
                           const SizedBox(height: 8),
                           Text(
