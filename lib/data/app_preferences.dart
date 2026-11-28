@@ -9,23 +9,31 @@ class AppPreferences {
       {this.displayName = '',
       this.avatar = 'leaf',
       this.largeText = false,
-      this.reducedMotion = false});
+      this.reducedMotion = false,
+      this.haptics = true,
+      this.cameraSound = false});
 
   final String displayName;
   final String avatar;
   final bool largeText;
   final bool reducedMotion;
+  final bool haptics;
+  final bool cameraSound;
 
   AppPreferences copyWith(
           {String? displayName,
           String? avatar,
           bool? largeText,
-          bool? reducedMotion}) =>
+          bool? reducedMotion,
+          bool? haptics,
+          bool? cameraSound}) =>
       AppPreferences(
         displayName: displayName ?? this.displayName,
         avatar: avatar ?? this.avatar,
         largeText: largeText ?? this.largeText,
         reducedMotion: reducedMotion ?? this.reducedMotion,
+        haptics: haptics ?? this.haptics,
+        cameraSound: cameraSound ?? this.cameraSound,
       );
 
   Map<String, Object> toJson() => {
@@ -33,6 +41,8 @@ class AppPreferences {
         'avatar': avatar,
         'large_text': largeText,
         'reduced_motion': reducedMotion,
+        'haptics': haptics,
+        'camera_sound': cameraSound,
       };
 
   static AppPreferences fromJson(Map<String, dynamic> data) => AppPreferences(
@@ -40,6 +50,8 @@ class AppPreferences {
         avatar: data['avatar'] as String? ?? 'leaf',
         largeText: data['large_text'] == true,
         reducedMotion: data['reduced_motion'] == true,
+        haptics: data['haptics'] != false,
+        cameraSound: data['camera_sound'] == true,
       );
 }
 

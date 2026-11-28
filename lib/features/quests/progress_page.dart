@@ -7,9 +7,14 @@ import '../../data/game_store.dart';
 import '../../ui/flora_design.dart';
 
 class ProgressPage extends StatelessWidget {
-  const ProgressPage({super.key, required this.state, required this.onClaim});
+  const ProgressPage(
+      {super.key,
+      required this.state,
+      required this.onClaim,
+      this.haptics = true});
   final GameSnapshot state;
   final ValueChanged<String> onClaim;
+  final bool haptics;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +45,7 @@ class ProgressPage extends StatelessWidget {
               target: 1,
               xp: dailyQuestXp,
               claimed: state.dailyClaimed,
+              haptics: haptics,
               onClaim: () => onClaim('daily')),
           const SizedBox(height: 10),
           _QuestRow(
@@ -50,6 +56,7 @@ class ProgressPage extends StatelessWidget {
               target: 3,
               xp: weeklyQuestXp,
               claimed: state.weeklyClaimed,
+              haptics: haptics,
               onClaim: () => onClaim('weekly')),
           const SizedBox(height: 24),
           const Divider(color: FloraPalette.line),
@@ -128,6 +135,7 @@ class _QuestRow extends StatelessWidget {
       required this.target,
       required this.xp,
       required this.claimed,
+      required this.haptics,
       required this.onClaim});
   final IconData icon;
   final String title;
@@ -136,6 +144,7 @@ class _QuestRow extends StatelessWidget {
   final int target;
   final int xp;
   final bool claimed;
+  final bool haptics;
   final VoidCallback onClaim;
 
   @override
@@ -177,7 +186,7 @@ class _QuestRow extends StatelessWidget {
             else if (ready)
               TextButton(
                   onPressed: () {
-                    HapticFeedback.selectionClick();
+                    if (haptics) HapticFeedback.selectionClick();
                     onClaim();
                   },
                   child: const Text('Claim reward'))

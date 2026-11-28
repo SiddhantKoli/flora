@@ -2,6 +2,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../data/app_preferences.dart';
 import '../../ui/flora_design.dart';
 import 'field_camera_shell.dart';
 import 'camera_look.dart';
@@ -31,11 +32,15 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
   bool _starting = false;
   bool _busy = false;
   late CameraLook _look = lookById(widget.initialLookId);
+  AppPreferences _feedback = const AppPreferences();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    AppPreferencesStore.instance.load().then((value) {
+      if (mounted) setState(() => _feedback = value);
+    });
     _initCamera();
   }
 
@@ -110,7 +115,7 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
 
   void _setLook(CameraLook look) {
     if (look.id == _look.id) return;
-    HapticFeedback.selectionClick();
+    if (_feedback.haptics) HapticFeedback.selectionClick();
     setState(() => _look = look);
   }
 
@@ -130,7 +135,8 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
       return;
     }
     setState(() => _busy = true);
-    HapticFeedback.mediumImpact();
+    if (_feedback.haptics) HapticFeedback.mediumImpact();
+    if (_feedback.cameraSound) SystemSound.play(SystemSoundType.click);
     try {
       final shot = await c.takePicture();
       String? processed;
@@ -211,7 +217,7 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
         _controller = next;
         _errorMessage = null;
       });
-      HapticFeedback.selectionClick();
+      if (_feedback.haptics) HapticFeedback.selectionClick();
     } on CameraException catch (error) {
       if (mounted) setState(() => _errorMessage = _messageFor(error));
     } catch (_) {

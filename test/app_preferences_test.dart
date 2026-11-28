@@ -7,12 +7,16 @@ void main() {
         displayName: 'Sky',
         avatar: 'flower',
         largeText: true,
-        reducedMotion: true);
+        reducedMotion: true,
+        haptics: false,
+        cameraSound: true);
     final restored = AppPreferences.fromJson(original.toJson());
     expect(restored.displayName, 'Sky');
     expect(restored.avatar, 'flower');
     expect(restored.largeText, isTrue);
     expect(restored.reducedMotion, isTrue);
+    expect(restored.haptics, isFalse);
+    expect(restored.cameraSound, isTrue);
   });
 
   test('missing settings use safe defaults', () {
@@ -21,5 +25,7 @@ void main() {
     expect(restored.avatar, 'leaf');
     expect(restored.largeText, isFalse);
     expect(restored.reducedMotion, isFalse);
+    expect(restored.haptics, isTrue);
+    expect(restored.cameraSound, isFalse);
   });
 }

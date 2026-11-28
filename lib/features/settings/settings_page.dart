@@ -112,6 +112,26 @@ class _SettingsPageState extends State<SettingsPage> {
                       ? null
                       : (value) =>
                           change(preferences.copyWith(reducedMotion: value))),
+              SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Touch feedback'),
+                  subtitle: const Text(
+                      'Vibrate gently for camera and quest actions.'),
+                  value: preferences.haptics,
+                  onChanged: busy
+                      ? null
+                      : (value) =>
+                          change(preferences.copyWith(haptics: value))),
+              SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Camera sound'),
+                  subtitle: const Text(
+                      'Play a small system click when taking a photo.'),
+                  value: preferences.cameraSound,
+                  onChanged: busy
+                      ? null
+                      : (value) =>
+                          change(preferences.copyWith(cameraSound: value))),
               const Divider(height: 42, color: FloraPalette.line),
               const _Heading('Photos & privacy'),
               const ListTile(

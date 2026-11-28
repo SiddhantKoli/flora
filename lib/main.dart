@@ -471,7 +471,8 @@ class _FloraAppState extends State<FloraApp> {
                           plantName: state
                               .plantById(observation.plantId)
                               ?.displayName)))),
-          ProgressPage(state: state, onClaim: claim),
+          ProgressPage(
+              state: state, onClaim: claim, haptics: preferences.haptics),
           FieldProfilePage(
               state: state,
               preferences: preferences,

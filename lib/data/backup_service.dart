@@ -349,7 +349,9 @@ class BackupService {
         avatar is! String ||
         avatar.length > 40 ||
         row['large_text'] is! bool ||
-        row['reduced_motion'] is! bool) {
+        row['reduced_motion'] is! bool ||
+        (row.containsKey('haptics') && row['haptics'] is! bool) ||
+        (row.containsKey('camera_sound') && row['camera_sound'] is! bool)) {
       throw const FormatException('Invalid profile preferences in backup.');
     }
     return AppPreferences.fromJson(row);
