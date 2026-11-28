@@ -2,15 +2,10 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'atomic_purple_camera_skin.dart';
+import '../../ui/flora_design.dart';
+import 'field_camera_shell.dart';
 import 'camera_look.dart';
 import 'look_baker.dart';
-
-class CameraPalette {
-  static const forest = Color(0xFF211629);
-  static const forestSoft = Color(0xFF281936);
-  static const lime = Color(0xFFD6F451);
-}
 
 /// "Add a plant" camera. Hands the result to FLORA's existing review flow via
 /// [onPhotoReady]. It does not identify plants; the user picks one manually
@@ -163,7 +158,7 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
   }
 
   @override
-  Widget build(BuildContext context) => AtomicPurpleCameraSkin(
+  Widget build(BuildContext context) => FieldCameraShell(
         preview: _previewLayer(),
         ready: _controller?.value.isInitialized == true && !_busy,
         busy: _busy,
@@ -172,7 +167,6 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
         onFlip: _flipCamera,
         onBack: () => Navigator.maybePop(context),
         onSettings: _showLookSelector,
-        onSkins: _showSkinInfo,
         onNextLook: _nextLook,
       );
 
@@ -232,7 +226,7 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
   void _showLookSelector() {
     showModalBottomSheet<void>(
       context: context,
-      backgroundColor: const Color(0xFF211629),
+      backgroundColor: FieldCameraShell.cameraBg,
       showDragHandle: true,
       isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
@@ -241,25 +235,27 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
           child: ListView(
               padding: const EdgeInsets.fromLTRB(18, 4, 18, 18),
               children: [
-                const Text('Photo look',
+                const Text('Choose a look',
                     style: TextStyle(
                         color: Colors.white,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18)),
+                        fontFamily: 'SpaceGrotesk',
+                        fontWeight: FontWeight.w700,
+                        fontSize: 25)),
                 const SizedBox(height: 6),
                 const Text(
                     'Effects are applied after capture. You can choose the original on review.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Color(0xFFCFB8D9), fontSize: 12)),
+                    style: TextStyle(color: Color(0xFFCADAD5), fontSize: 13)),
                 const SizedBox(height: 12),
                 ...kCameraLooks.map((look) => ListTile(
                       title: Text(look.name,
-                          style: const TextStyle(color: Colors.white)),
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700)),
                       subtitle: Text(look.traits,
-                          style: const TextStyle(color: Color(0xFFCFB8D9))),
+                          style: const TextStyle(color: Color(0xFFCADAD5))),
                       trailing: _look.id == look.id
                           ? const Icon(Icons.check_circle,
-                              color: Color(0xFFD6F451))
+                              color: FloraPalette.coral)
                           : null,
                       onTap: () {
                         _setLook(look);
@@ -272,47 +268,17 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
     );
   }
 
-  void _showSkinInfo() {
-    showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: const Color(0xFF211629),
-      showDragHandle: true,
-      builder: (_) => const SafeArea(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(24, 12, 24, 32),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(Icons.style_rounded, size: 40, color: Color(0xFFD6F451)),
-            SizedBox(height: 12),
-            Text('Atomic Purple',
-                style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: Colors.white)),
-            SizedBox(height: 8),
-            Text('Current camera style',
-                style: TextStyle(color: Color(0xFFD6F451))),
-            SizedBox(height: 14),
-            Text(
-                'Take a photo here to add a plant. FLORA does not identify plants; you choose one on the next screen.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Color(0xFFCFB8D9), height: 1.4)),
-          ]),
-        ),
-      ),
-    );
-  }
-
   Widget _previewLayer() {
     if (_errorMessage != null) {
       return Container(
-        color: CameraPalette.forestSoft,
+        color: FieldCameraShell.cameraBg,
         padding: const EdgeInsets.all(20),
         alignment: Alignment.center,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.no_photography_outlined,
-                color: CameraPalette.lime, size: 40),
+                color: FloraPalette.coral, size: 40),
             const SizedBox(height: 12),
             Text(
               _errorMessage!,
@@ -323,8 +289,8 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
             const SizedBox(height: 12),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: CameraPalette.lime,
-                foregroundColor: CameraPalette.forest,
+                backgroundColor: FloraPalette.coral,
+                foregroundColor: FloraPalette.ink,
                 minimumSize: const Size(48, 48),
               ),
               onPressed: _initCamera,
@@ -338,11 +304,11 @@ class _AddPlantCameraScreenState extends State<AddPlantCameraScreen>
     final c = _controller;
     if (c == null || !c.value.isInitialized || c.value.previewSize == null) {
       return Container(
-        color: CameraPalette.forestSoft,
+        color: FieldCameraShell.cameraBg,
         alignment: Alignment.center,
         child: Semantics(
           label: 'Starting camera',
-          child: const CircularProgressIndicator(color: CameraPalette.lime),
+          child: const CircularProgressIndicator(color: FloraPalette.coral),
         ),
       );
     }
