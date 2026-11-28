@@ -11,6 +11,13 @@ function photoRequest() {
   return new Request('https://flora.example/identify', { method: 'POST', body });
 }
 
+function limits(allowed = true) {
+  return {
+    CLIENT_LIMIT: { limit: async () => ({ success: allowed }) },
+    GLOBAL_LIMIT: { limit: async () => ({ success: allowed }) },
+  };
+}
+
 test('normalizes a Pl@ntNet candidate', () => {
   assert.deepEqual(normalizeResult({
     score: .91,
@@ -50,6 +57,7 @@ test('forwards photo and returns only ranked names and scores', async () => {
     };
     const response = await worker.fetch(photoRequest(), {
       PLANTNET_API_KEY: 'test-secret',
+      ...limits(),
     });
     assert.equal(response.status, 200);
     const data = await response.json();
@@ -66,6 +74,21 @@ test('rejects a file that is not a photo', async () => {
   body.append('image', new Blob([new Uint8Array(200)]), 'bad.bin');
   const response = await worker.fetch(new Request('https://flora.example/identify', {
     method: 'POST', body,
-  }), { PLANTNET_API_KEY: 'test-secret' });
+  }), { PLANTNET_API_KEY: 'test-secret', ...limits() });
   assert.equal(response.status, 415);
+});
+
+test('stops requests when a rate limit is reached', async () => {
+  const response = await worker.fetch(photoRequest(), {
+    PLANTNET_API_KEY: 'test-secret',
+    ...limits(false),
+  });
+  assert.equal(response.status, 429);
+});
+
+test('fails closed if a rate limiter is missing', async () => {
+  const response = await worker.fetch(photoRequest(), {
+    PLANTNET_API_KEY: 'test-secret',
+  });
+  assert.equal(response.status, 503);
 });

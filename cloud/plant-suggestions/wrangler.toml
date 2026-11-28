@@ -2,4 +2,18 @@ name = "flora-plant-suggestions"
 main = "src/index.mjs"
 compatibility_date = "2026-11-28"
 
+[[ratelimits]]
+name = "CLIENT_LIMIT"
+namespace_id = "1001"
+[ratelimits.simple]
+limit = 12
+period = 60
+
+[[ratelimits]]
+name = "GLOBAL_LIMIT"
+namespace_id = "1002"
+[ratelimits.simple]
+limit = 50
+period = 60
+
 # Set PLANTNET_API_KEY as a Worker secret, never in this file or the APK.

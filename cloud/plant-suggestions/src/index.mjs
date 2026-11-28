@@ -33,6 +33,21 @@ export default {
     if (!env.PLANTNET_API_KEY) {
       return json({ error: 'Identification is not configured' }, 503);
     }
+    if (!env.CLIENT_LIMIT || !env.GLOBAL_LIMIT) {
+      return json({ error: 'Identification is not configured' }, 503);
+    }
+    try {
+      const ip = request.headers.get('cf-connecting-ip') ?? 'unknown';
+      const [client, global] = await Promise.all([
+        env.CLIENT_LIMIT.limit({ key: ip }),
+        env.GLOBAL_LIMIT.limit({ key: 'all-identifications' }),
+      ]);
+      if (!client.success || !global.success) {
+        return json({ error: 'Please wait before trying another photo' }, 429);
+      }
+    } catch {
+      return json({ error: 'Identification is temporarily unavailable' }, 503);
+    }
     const length = Number(request.headers.get('content-length'));
     if (Number.isFinite(length) && length > MAX_IMAGE_BYTES + 10000) {
       return json({ error: 'Photo is too large' }, 413);

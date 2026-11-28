@@ -41,9 +41,11 @@ of Git.
 - The Worker accepts JPEG or PNG files up to 10 MB, does not persist them, and
   returns only names, family, score, and model version. Pl@ntNet says uploaded
   photos are used in memory for identification and not stored.
-- This open endpoint can have its shared free quota exhausted by misuse. Add
-  Cloudflare rate limiting and abuse controls before a public launch. Never
-  ship the upstream API key in the APK.
+- The public endpoint has approximate per-IP and global request limits to slow
+  abuse. Cloudflare applies these limits separately at each edge location, so
+  they do not guarantee the shared Pl@ntNet daily quota cannot be exhausted.
+  A public launch needs stronger abuse controls and quota monitoring. Never ship
+  the upstream API key in the APK.
 - The app works without this service: manual naming and Unknown remain
   available. A model suggestion is not a verified identification.
 
