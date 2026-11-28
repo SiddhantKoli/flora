@@ -8,6 +8,7 @@ import '../../data/observation.dart';
 import '../../data/personal_plant.dart';
 import '../../data/species.dart';
 import '../../ui/flora_design.dart';
+import 'journal_calendar_page.dart';
 
 class PersonalJournalPage extends StatefulWidget {
   const PersonalJournalPage(
@@ -66,6 +67,17 @@ class _PersonalJournalPageState extends State<PersonalJournalPage> {
               Text('${widget.state.observations.length} visits',
                   style: FloraType.body.copyWith(color: FloraPalette.muted)),
             ]),
+            const SizedBox(height: 14),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => JournalCalendarPage(
+                  state: widget.state,
+                  onOpenVisit: widget.onOpenVisit,
+                ),
+              )),
+              icon: const Icon(Icons.calendar_month_outlined),
+              label: const Text('View visit calendar'),
+            ),
             const SizedBox(height: 18),
             if (widget.state.plants.isEmpty)
               _EmptyJournal(onAddPlant: widget.onAddPlant)
