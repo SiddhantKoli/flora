@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import 'data/game_rules.dart';
 import 'data/app_preferences.dart';
 import 'data/game_store.dart';
 import 'data/observation.dart';
@@ -12,7 +11,6 @@ import 'data/personal_plant.dart';
 import 'data/species.dart';
 import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
-import 'features/backup/backup_page.dart';
 import 'features/journal/personal_journal_page.dart';
 import 'features/plantdex/explore_page.dart';
 import 'features/quests/progress_page.dart';
@@ -574,41 +572,43 @@ class _ReviewPageState extends State<ReviewPage> {
         .toList();
     return Scaffold(
       appBar: AppBar(
-          title: Text(widget.existingPlant == null ? 'New plant' : 'New visit',
-              style:
-                  TextStyle(fontWeight: FontWeight.w900, letterSpacing: -0.5))),
+          title: Text(
+              widget.existingPlant == null ? 'Review your find' : 'New visit',
+              style: FloraType.title.copyWith(fontSize: 21))),
       body: SafeArea(
           child: Column(children: [
         Expanded(
             child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 18),
+                padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
                 children: [
+              const Text('01 / PHOTO', style: FloraType.caption),
+              const SizedBox(height: 10),
               ClipRRect(
-                  borderRadius: BorderRadius.circular(25),
+                  borderRadius: BorderRadius.circular(8),
                   child: Image.file(
                       File(showOriginal
                           ? photo.originalPath
                           : photo.displayPath),
-                      height: 205,
+                      height: 285,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       cacheWidth: 1000,
                       errorBuilder: (_, __, ___) => const SizedBox(
-                          height: 205,
+                          height: 285,
                           child: Center(
                               child: Text('Photo preview unavailable'))))),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
               OutlinedButton.icon(
                   onPressed: saving ? null : retake,
                   icon: const Icon(Icons.camera_alt_outlined),
                   label: const Text('Retake photo')),
-              const SizedBox(height: 12),
+              const SizedBox(height: 24),
               if (saveError != null) ...[
                 Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
-                        color: FloraPalette.coral,
-                        borderRadius: BorderRadius.circular(14)),
+                        color: FloraPalette.coral.withValues(alpha: .16),
+                        borderRadius: BorderRadius.circular(8)),
                     child: Row(children: [
                       const Icon(Icons.info_outline),
                       const SizedBox(width: 10),
@@ -627,8 +627,7 @@ class _ReviewPageState extends State<ReviewPage> {
               ],
               if (widget.existingPlant != null) ...[
                 Text(widget.existingPlant!.displayName,
-                    style: const TextStyle(
-                        fontSize: 30, fontWeight: FontWeight.w900)),
+                    style: FloraType.display.copyWith(fontSize: 32)),
                 const SizedBox(height: 6),
                 Text(
                     widget.existingPlant!.placeLabel.isEmpty
@@ -637,23 +636,13 @@ class _ReviewPageState extends State<ReviewPage> {
                     style: const TextStyle(color: FloraPalette.muted)),
                 const SizedBox(height: 18),
               ] else ...[
-                const Text('YOUR FIND',
-                    style: TextStyle(
-                        color: forest,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1)),
-                const SizedBox(height: 5),
-                const Text('Look familiar?',
-                    style: TextStyle(
-                        color: ink,
-                        fontSize: 31,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1)),
+                const Text('02 / NAME YOUR FIND', style: FloraType.caption),
+                const SizedBox(height: 7),
+                const Text('Look familiar?', style: FloraType.display),
                 const SizedBox(height: 6),
-                const Text(
+                Text(
                     'FLORA does not identify plants yet. Choose one only if you recognize it, or save this photo as unknown.',
-                    style: TextStyle(color: FloraPalette.muted, height: 1.35)),
+                    style: FloraType.body.copyWith(color: FloraPalette.muted)),
                 const SizedBox(height: 18),
                 TextField(
                     onChanged: (value) => setState(() => search = value),
@@ -700,6 +689,9 @@ class _ReviewPageState extends State<ReviewPage> {
                     style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
                 const SizedBox(height: 14),
               ],
+              const SizedBox(height: 16),
+              const Text('03 / FIELD NOTE', style: FloraType.caption),
+              const SizedBox(height: 10),
               TextField(
                   controller: notes,
                   minLines: 2,
@@ -710,7 +702,9 @@ class _ReviewPageState extends State<ReviewPage> {
                       hintText: 'What did you notice?')),
             ])),
         Container(
-            color: Colors.white,
+            decoration: const BoxDecoration(
+                color: FloraPalette.surface,
+                border: Border(top: BorderSide(color: FloraPalette.line))),
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 14),
             child: Column(children: [
               FilledButton(
@@ -722,8 +716,8 @@ class _ReviewPageState extends State<ReviewPage> {
                       : () =>
                           save(widget.existingPlant?.speciesId ?? selectedId),
                   style: FilledButton.styleFrom(
-                      backgroundColor: FloraPalette.lime,
-                      foregroundColor: ink,
+                      backgroundColor: FloraPalette.signal,
+                      foregroundColor: Colors.white,
                       minimumSize: const Size.fromHeight(54)),
                   child: Text(
                       saving
@@ -736,7 +730,7 @@ class _ReviewPageState extends State<ReviewPage> {
                 TextButton(
                     onPressed:
                         saving ? null : () => save(null, asUnknown: true),
-                    child: const Text('Not sure? Save photo as unknown',
+                    child: const Text('Not sure? Save as unknown',
                         style: TextStyle(fontWeight: FontWeight.w700))),
             ])),
       ])),
@@ -754,7 +748,7 @@ class _ReviewPageState extends State<ReviewPage> {
             selectedId = species.id;
             customName.clear();
           }),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(8),
           child: AnimatedContainer(
             duration: MediaQuery.disableAnimationsOf(context)
                 ? Duration.zero
@@ -763,21 +757,23 @@ class _ReviewPageState extends State<ReviewPage> {
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
                 color: selected
-                    ? FloraPalette.lime.withValues(alpha: 0.35)
+                    ? FloraPalette.mint.withValues(alpha: 0.65)
                     : Colors.white,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: selected ? forest : FloraPalette.line,
+                    color: selected ? FloraPalette.signal : FloraPalette.line,
                     width: selected ? 2 : 1)),
             child: Row(children: [
               Container(
                   width: 56,
                   height: 56,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                       color: Color(species.color),
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Center(
-                      child: PlantIllustration(species: species, scale: 0.3))),
+                      borderRadius: BorderRadius.circular(6)),
+                  child: Text(species.commonName.substring(0, 1).toUpperCase(),
+                      style:
+                          FloraType.title.copyWith(color: FloraPalette.night))),
               const SizedBox(width: 13),
               Expanded(
                   child: Column(
@@ -790,544 +786,10 @@ class _ReviewPageState extends State<ReviewPage> {
                             fontSize: 12, color: FloraPalette.muted))
                   ])),
               Icon(selected ? Icons.check_circle : Icons.circle_outlined,
-                  color: selected ? forest : FloraPalette.muted),
+                  color: selected ? FloraPalette.signal : FloraPalette.muted),
             ]),
           ),
         ));
-  }
-}
-
-class PlantdexPage extends StatefulWidget {
-  const PlantdexPage({super.key, required this.state, required this.onScan});
-  final GameSnapshot state;
-  final VoidCallback onScan;
-
-  @override
-  State<PlantdexPage> createState() => _PlantdexPageState();
-}
-
-class _PlantdexPageState extends State<PlantdexPage> {
-  String search = '';
-  bool unlockedOnly = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final reducedMotion = MediaQuery.disableAnimationsOf(context);
-    final entries = seedSpecies.where((species) {
-      if (unlockedOnly && !widget.state.unlockedIds.contains(species.id)) {
-        return false;
-      }
-      return '${species.commonName} ${species.scientificName} ${species.family}'
-          .toLowerCase()
-          .contains(search.toLowerCase());
-    }).toList();
-    return LayoutBuilder(builder: (context, constraints) {
-      final columns = constraints.maxWidth >= 640 ? 3 : 2;
-      return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
-          children: [
-            Row(children: [
-              const Text('FLORA',
-                  style: TextStyle(
-                      color: ink,
-                      fontSize: 21,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1.3)),
-              const Text('✦',
-                  style: TextStyle(color: FloraPalette.coral, fontSize: 18)),
-              const Spacer(),
-              Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20)),
-                  child: const Text('GUEST EXPLORER',
-                      style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5))),
-            ]),
-            const SizedBox(height: 25),
-            const Text('Plantdex',
-                style: TextStyle(
-                    fontSize: 40,
-                    height: 1,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -1.8,
-                    color: ink)),
-            const SizedBox(height: 7),
-            const Text('Your pocket-sized world of green.',
-                style: TextStyle(
-                    fontSize: 15,
-                    color: FloraPalette.muted,
-                    fontWeight: FontWeight.w500)),
-            const SizedBox(height: 23),
-            Container(
-              height: 176,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                  color: forest, borderRadius: BorderRadius.circular(26)),
-              child: Stack(children: [
-                Positioned(
-                    right: -15,
-                    top: -28,
-                    child: Container(
-                        width: 158,
-                        height: 158,
-                        decoration: const BoxDecoration(
-                            color: FloraPalette.lime, shape: BoxShape.circle))),
-                Positioned(
-                    right: -3,
-                    top: -38,
-                    child: PlantIllustration(
-                        species: seedSpecies.first, scale: 0.94)),
-                Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('YOUR COLLECTION',
-                          style: TextStyle(
-                              color: FloraPalette.lime,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 1.1)),
-                      Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                                '${widget.state.unlockedIds.length.toString().padLeft(2, '0')} / ${seedSpecies.length.toString().padLeft(2, '0')}',
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 36,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -1.2)),
-                            const Text('plants in your world',
-                                style: TextStyle(
-                                    color: Color(0xFFD2E2D8),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 11),
-                            SizedBox(
-                                width: 150,
-                                child: TweenAnimationBuilder<double>(
-                                  tween: Tween(
-                                      begin: 0,
-                                      end: widget.state.unlockedIds.length /
-                                          seedSpecies.length),
-                                  duration: reducedMotion
-                                      ? Duration.zero
-                                      : const Duration(milliseconds: 700),
-                                  builder: (_, value, __) =>
-                                      LinearProgressIndicator(
-                                          value: value,
-                                          color: FloraPalette.lime,
-                                          backgroundColor: Colors.white30,
-                                          minHeight: 5,
-                                          borderRadius:
-                                              BorderRadius.circular(5)),
-                                )),
-                          ]),
-                    ]),
-              ]),
-            ),
-            const SizedBox(height: 24),
-            TextField(
-                onChanged: (value) => setState(() => search = value),
-                decoration: const InputDecoration(
-                    prefixIcon: Icon(Icons.search),
-                    hintText: 'Search your plant world',
-                    labelText: 'Search plants')),
-            const SizedBox(height: 17),
-            Row(children: [
-              _filter('All plants', false),
-              const SizedBox(width: 8),
-              _filter('Collected', true),
-              const Spacer(),
-              Text('${entries.length} entries',
-                  style: const TextStyle(
-                      color: FloraPalette.muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700)),
-            ]),
-            const SizedBox(height: 18),
-            if (entries.isEmpty)
-              Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 55),
-                  child: Column(children: [
-                    const Icon(Icons.spa_outlined,
-                        size: 42, color: FloraPalette.muted),
-                    const SizedBox(height: 12),
-                    Text(
-                        unlockedOnly
-                            ? 'Nothing collected yet. Tap the camera to begin.'
-                            : 'No plants match your search.',
-                        textAlign: TextAlign.center)
-                  ])),
-            if (entries.isNotEmpty)
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: entries.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: columns,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.78),
-                itemBuilder: (context, index) {
-                  final species = entries[index];
-                  final unlocked =
-                      widget.state.unlockedIds.contains(species.id);
-                  const backgrounds = [
-                    Color(0xFFDDEFC8),
-                    FloraPalette.blue,
-                    FloraPalette.lilac,
-                    Color(0xFFFFD9CD),
-                    Color(0xFFCDE9D9),
-                    Color(0xFFF6E8B2),
-                    Color(0xFFC9E8DF),
-                    Color(0xFFF3D7E7)
-                  ];
-                  final paletteIndex =
-                      seedSpecies.indexWhere((item) => item.id == species.id);
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: 1),
-                    duration: reducedMotion
-                        ? Duration.zero
-                        : Duration(milliseconds: 240 + index * 45),
-                    builder: (context, opacity, child) => Opacity(
-                        opacity: opacity,
-                        child: Transform.translate(
-                            offset: Offset(0, (1 - opacity) * 10),
-                            child: child)),
-                    child: Semantics(
-                        button: true,
-                        label:
-                            '${species.commonName}, ${unlocked ? 'collected' : 'not collected'}',
-                        child: InkWell(
-                          onTap: () => showModalBottomSheet<void>(
-                              context: context,
-                              isScrollControlled: true,
-                              showDragHandle: true,
-                              builder: (_) => SpeciesDetail(
-                                  species: species, unlocked: unlocked)),
-                          borderRadius: BorderRadius.circular(22),
-                          child: Container(
-                              decoration: BoxDecoration(
-                                  color: backgrounds[paletteIndex],
-                                  borderRadius: BorderRadius.circular(22)),
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                        child: Stack(children: [
-                                      Center(
-                                          child: PlantIllustration(
-                                              species: species,
-                                              muted: !unlocked,
-                                              scale: 0.8)),
-                                      Positioned(
-                                          top: 12,
-                                          right: 12,
-                                          child: Icon(
-                                              unlocked
-                                                  ? Icons.check_circle
-                                                  : Icons.lock_outline_rounded,
-                                              size: 18,
-                                              color:
-                                                  ink.withValues(alpha: 0.65))),
-                                    ])),
-                                    Padding(
-                                        padding: const EdgeInsets.fromLTRB(
-                                            14, 0, 14, 14),
-                                        child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text(species.commonName,
-                                                  maxLines: 2,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      fontWeight:
-                                                          FontWeight.w900,
-                                                      fontSize: 15,
-                                                      letterSpacing: -0.4)),
-                                              const SizedBox(height: 3),
-                                              Text(
-                                                  unlocked
-                                                      ? species.scientificName
-                                                      : 'Ready to discover',
-                                                  maxLines: 1,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                      color: FloraPalette.muted,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                      fontSize: 11)),
-                                            ])),
-                                  ])),
-                        )),
-                  );
-                },
-              ),
-            const SizedBox(height: 20),
-            Center(
-                child: TextButton.icon(
-                    onPressed: widget.onScan,
-                    icon: const Icon(Icons.camera_alt_outlined),
-                    label: const Text('Find something new'))),
-          ]);
-    });
-  }
-
-  Widget _filter(String label, bool value) {
-    final active = unlockedOnly == value;
-    return ChoiceChip(
-        label: Text(label),
-        selected: active,
-        onSelected: (_) => setState(() => unlockedOnly = value),
-        selectedColor: FloraPalette.lime,
-        backgroundColor: Colors.white,
-        side: BorderSide.none,
-        labelStyle: const TextStyle(fontWeight: FontWeight.w800, color: ink));
-  }
-}
-
-class SpeciesDetail extends StatelessWidget {
-  const SpeciesDetail(
-      {super.key, required this.species, required this.unlocked});
-  final Species species;
-  final bool unlocked;
-
-  @override
-  Widget build(BuildContext context) => SafeArea(
-      child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 8, 22, 30),
-          child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                    height: 210,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                        color: Color(species.color),
-                        borderRadius: BorderRadius.circular(24)),
-                    child: Center(
-                        child: PlantIllustration(
-                            species: species, muted: !unlocked, scale: 1.08))),
-                const SizedBox(height: 22),
-                Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-                    decoration: BoxDecoration(
-                        color: unlocked ? FloraPalette.lime : FloraPalette.line,
-                        borderRadius: BorderRadius.circular(20)),
-                    child: Text(
-                        unlocked ? 'IN YOUR COLLECTION' : 'WAITING TO BE FOUND',
-                        style: const TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5))),
-                const SizedBox(height: 10),
-                Text(species.commonName,
-                    style: const TextStyle(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -1.2)),
-                const SizedBox(height: 2),
-                Text(species.scientificName,
-                    style: const TextStyle(
-                        fontStyle: FontStyle.italic,
-                        color: FloraPalette.muted)),
-                const SizedBox(height: 18),
-                Text('THE QUICK TAKE',
-                    style: TextStyle(
-                        color: forest,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                        letterSpacing: 1)),
-                const SizedBox(height: 7),
-                Text(
-                    unlocked
-                        ? species.description
-                        : 'Spot it in the real world, take a photo, and add it to your collection.',
-                    style: const TextStyle(fontSize: 15, height: 1.4)),
-                const SizedBox(height: 12),
-                Text('Family  /  ${species.family}',
-                    style: const TextStyle(
-                        fontSize: 13,
-                        color: FloraPalette.muted,
-                        fontWeight: FontWeight.w700)),
-                const SizedBox(height: 20),
-                const Text(
-                    'Draft catalog entry. A selected plant is not an expert identification.',
-                    style: TextStyle(fontSize: 12, color: FloraPalette.muted)),
-              ])));
-}
-
-class QuestPage extends StatelessWidget {
-  const QuestPage({super.key, required this.state, required this.onClaim});
-  final GameSnapshot state;
-  final ValueChanged<String> onClaim;
-
-  @override
-  Widget build(BuildContext context) =>
-      ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 30), children: [
-        const Text('Side quests.',
-            style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1.7)),
-        const SizedBox(height: 6),
-        const Text('A little motivation to look closer.',
-            style: TextStyle(color: FloraPalette.muted, fontSize: 15)),
-        const SizedBox(height: 22),
-        Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-                color: forest, borderRadius: BorderRadius.circular(23)),
-            child:
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                const Icon(Icons.bolt_rounded,
-                    color: FloraPalette.lime, size: 36),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: Text('${state.xp} XP',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 24))),
-                Text('LVL ${levelForXp(state.xp)}',
-                    style: const TextStyle(
-                        color: FloraPalette.lime, fontWeight: FontWeight.w900)),
-              ]),
-              const SizedBox(height: 15),
-              LinearProgressIndicator(
-                  value: xpIntoLevel(state.xp) / 250,
-                  minHeight: 7,
-                  borderRadius: BorderRadius.circular(7),
-                  color: FloraPalette.lime,
-                  backgroundColor: Colors.white24),
-              const SizedBox(height: 8),
-              Text(
-                  '${250 - xpIntoLevel(state.xp)} XP to level ${levelForXp(state.xp) + 1}',
-                  style: const TextStyle(color: Color(0xFFC4D9CB))),
-            ])),
-        const SizedBox(height: 12),
-        const Text(
-            'First catalog discovery: +100 XP. A new photo of a plant already found: +10 XP at most once per day. Unknown plants can still be part of your journal.',
-            style: TextStyle(color: FloraPalette.muted, height: 1.4)),
-        const SizedBox(height: 25),
-        const Text('ON THE BOARD',
-            style: TextStyle(
-                color: FloraPalette.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1)),
-        const SizedBox(height: 12),
-        QuestCard(
-            title: 'A new leaf',
-            description: 'Record one plant you recognize today.',
-            progress: state.dailyProgress,
-            target: 1,
-            xp: dailyQuestXp,
-            claimed: state.dailyClaimed,
-            onClaim: () => onClaim('daily')),
-        const SizedBox(height: 14),
-        QuestCard(
-            title: 'The week in green',
-            description: 'Find three different plants this week.',
-            progress: state.weeklyProgress,
-            target: 3,
-            xp: weeklyQuestXp,
-            claimed: state.weeklyClaimed,
-            onClaim: () => onClaim('weekly')),
-        const SizedBox(height: 18),
-        const Text(
-            'Quests are optional. You can keep a journal without claiming them. Progress uses your own catalog selections and resets on your device’s local calendar.',
-            style: TextStyle(
-                color: FloraPalette.muted, fontSize: 12, height: 1.4)),
-      ]);
-}
-
-class QuestCard extends StatelessWidget {
-  const QuestCard(
-      {super.key,
-      required this.title,
-      required this.description,
-      required this.progress,
-      required this.target,
-      required this.xp,
-      required this.claimed,
-      required this.onClaim});
-  final String title;
-  final String description;
-  final int progress;
-  final int target;
-  final int xp;
-  final bool claimed;
-  final VoidCallback onClaim;
-
-  @override
-  Widget build(BuildContext context) {
-    final daily = target == 1;
-    return Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-            color: daily ? FloraPalette.lilac : FloraPalette.blue,
-            borderRadius: BorderRadius.circular(24)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.75),
-                    borderRadius: BorderRadius.circular(15)),
-                child: Icon(
-                    daily ? Icons.wb_sunny_outlined : Icons.explore_outlined,
-                    color: ink)),
-            const Spacer(),
-            Text('+$xp XP',
-                style: const TextStyle(
-                    color: ink, fontWeight: FontWeight.w900, fontSize: 15))
-          ]),
-          const SizedBox(height: 18),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.7)),
-          const SizedBox(height: 4),
-          Text(description,
-              style: const TextStyle(color: FloraPalette.ink, fontSize: 14)),
-          const SizedBox(height: 22),
-          LinearProgressIndicator(
-              value: (progress / target).clamp(0.0, 1.0),
-              color: forest,
-              backgroundColor: Colors.white70,
-              minHeight: 7,
-              borderRadius: BorderRadius.circular(7)),
-          const SizedBox(height: 9),
-          Row(children: [
-            Text('${progress.clamp(0, target)} of $target',
-                style:
-                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
-            const Spacer(),
-            if (claimed) const Icon(Icons.check_circle, color: forest, size: 19)
-          ]),
-          const SizedBox(height: 12),
-          FilledButton(
-              onPressed: claimed || progress < target ? null : onClaim,
-              style: FilledButton.styleFrom(
-                  backgroundColor: forest, foregroundColor: Colors.white),
-              child: Text(claimed ? 'Claimed' : 'Claim reward',
-                  style: const TextStyle(fontWeight: FontWeight.w800))),
-        ]));
   }
 }
 
@@ -1649,275 +1111,4 @@ class _ObservationDetailState extends State<ObservationDetail> {
                   style: TextStyle(fontWeight: FontWeight.w900))),
         ]));
   }
-}
-
-class ProfilePage extends StatelessWidget {
-  const ProfilePage(
-      {super.key,
-      required this.state,
-      required this.preferences,
-      required this.onPreferencesChanged,
-      required this.onRestored,
-      required this.onJournal,
-      required this.onSettings});
-  final GameSnapshot state;
-  final AppPreferences preferences;
-  final Future<void> Function(AppPreferences) onPreferencesChanged;
-  final Future<void> Function() onRestored;
-  final VoidCallback onJournal;
-  final VoidCallback onSettings;
-
-  Future<void> editProfile(BuildContext context) async {
-    final name = TextEditingController(text: preferences.displayName);
-    var avatar = preferences.avatar;
-    await showModalBottomSheet<void>(
-        context: context,
-        isScrollControlled: true,
-        showDragHandle: true,
-        builder: (sheetContext) => StatefulBuilder(
-            builder: (context, setSheetState) => SafeArea(
-                child: Padding(
-                    padding: EdgeInsets.fromLTRB(20, 8, 20,
-                        MediaQuery.viewInsetsOf(context).bottom + 22),
-                    child: SingleChildScrollView(
-                        child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                          const Text('Make it yours',
-                              style: TextStyle(
-                                  fontSize: 28, fontWeight: FontWeight.w900)),
-                          const SizedBox(height: 14),
-                          TextField(
-                              controller: name,
-                              maxLength: 40,
-                              decoration: const InputDecoration(
-                                  labelText: 'Display name',
-                                  hintText: 'Guest explorer')),
-                          const SizedBox(height: 8),
-                          const Text('Choose an icon',
-                              style: TextStyle(fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 8),
-                          Wrap(
-                              spacing: 10,
-                              children: ['leaf', 'flower', 'sun', 'spark']
-                                  .map((option) => ChoiceChip(
-                                      label: Icon(_avatarIcon(option),
-                                          semanticLabel: option),
-                                      selected: avatar == option,
-                                      onSelected: (_) =>
-                                          setSheetState(() => avatar = option)))
-                                  .toList()),
-                          const SizedBox(height: 18),
-                          FilledButton(
-                              onPressed: () async {
-                                await onPreferencesChanged(preferences.copyWith(
-                                    displayName: name.text.trim(),
-                                    avatar: avatar));
-                                if (sheetContext.mounted)
-                                  Navigator.pop(sheetContext);
-                              },
-                              style: FilledButton.styleFrom(
-                                  minimumSize: const Size.fromHeight(52)),
-                              child: const Text('Save profile')),
-                        ]))))));
-    name.dispose();
-  }
-
-  IconData _avatarIcon(String name) => switch (name) {
-        'flower' => Icons.local_florist_rounded,
-        'sun' => Icons.wb_sunny_rounded,
-        'spark' => Icons.auto_awesome_rounded,
-        _ => Icons.spa_rounded,
-      };
-
-  @override
-  Widget build(BuildContext context) =>
-      ListView(padding: const EdgeInsets.fromLTRB(20, 24, 20, 30), children: [
-        Text(
-            preferences.displayName.isEmpty
-                ? 'You, in bloom.'
-                : '${preferences.displayName}, in bloom.',
-            style: TextStyle(
-                fontSize: 38,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -1.7)),
-        const SizedBox(height: 6),
-        const Text('Guest profile · saved on this device',
-            style: TextStyle(color: FloraPalette.muted, fontSize: 15)),
-        const SizedBox(height: 8),
-        const Text('Export a backup before reinstalling or changing phones.',
-            style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
-        const SizedBox(height: 14),
-        Row(children: [
-          CircleAvatar(
-              radius: 29,
-              backgroundColor: FloraPalette.lilac,
-              child: Icon(_avatarIcon(preferences.avatar),
-                  size: 30, color: forest)),
-          const SizedBox(width: 12),
-          OutlinedButton.icon(
-              onPressed: () => editProfile(context),
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Edit profile')),
-        ]),
-        const SizedBox(height: 23),
-        Container(
-            height: 190,
-            padding: const EdgeInsets.all(23),
-            decoration: BoxDecoration(
-                color: forest, borderRadius: BorderRadius.circular(26)),
-            child: Stack(children: [
-              Positioned(
-                  right: -16,
-                  top: -37,
-                  child: Container(
-                      width: 165,
-                      height: 165,
-                      decoration: const BoxDecoration(
-                          color: FloraPalette.coral, shape: BoxShape.circle))),
-              Positioned(
-                  right: 5,
-                  top: 1,
-                  child: Text('${levelForXp(state.xp)}',
-                      style: const TextStyle(
-                          fontSize: 116,
-                          height: 1,
-                          color: ink,
-                          fontWeight: FontWeight.w900))),
-              Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('YOUR LEVEL',
-                        style: TextStyle(
-                            color: FloraPalette.lime,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 11,
-                            letterSpacing: 1)),
-                    Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Keep growing.',
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w900,
-                                  fontSize: 24)),
-                          const SizedBox(height: 8),
-                          Text('${state.xp} XP earned',
-                              style: const TextStyle(color: Color(0xFFCFDFD4)))
-                        ])
-                  ]),
-            ])),
-        const SizedBox(height: 13),
-        Row(children: [
-          Expanded(
-              child: _stat('${state.unlockedIds.length}', 'Plants found',
-                  FloraPalette.lime)),
-          const SizedBox(width: 12),
-          Expanded(
-              child: _stat('${state.observations.length}', 'Field notes',
-                  FloraPalette.blue)),
-        ]),
-        const SizedBox(height: 14),
-        OutlinedButton.icon(
-            onPressed: onJournal,
-            icon: const Icon(Icons.menu_book_outlined),
-            label: const Text('Open your plant journal')),
-        if (state.plants.isNotEmpty) ...[
-          const SizedBox(height: 26),
-          const Text('Recent plants',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 10),
-          ...state.plants.take(3).map((plant) => ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.spa_rounded, color: forest),
-                title: Text(plant.displayName),
-                subtitle: Text(
-                    '${plant.visits.length} ${plant.visits.length == 1 ? 'visit' : 'visits'}'),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                onTap: onJournal,
-              )),
-        ],
-        const SizedBox(height: 28),
-        const Text('Badges to earn',
-            style: TextStyle(
-                fontSize: 23,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.7)),
-        const SizedBox(height: 12),
-        _badge('First find', 'Discover your first plant',
-            state.achievements.contains('first_discovery'), FloraPalette.lilac),
-        const SizedBox(height: 10),
-        _badge('Field collector', 'Discover five different plants',
-            state.achievements.contains('five_species'), FloraPalette.coral),
-        const SizedBox(height: 28),
-        const Text('Your space, your data',
-            style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w900,
-                letterSpacing: -0.4)),
-        const SizedBox(height: 8),
-        const Text(
-            'Photos and progress live on this device. Plant entries are drafts, and selections are not expert identification.',
-            style: TextStyle(color: FloraPalette.muted, height: 1.45)),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => BackupPage(onRestored: onRestored))),
-            icon: const Icon(Icons.save_alt_rounded),
-            label: const Text('Export or restore journal')),
-        const SizedBox(height: 10),
-        OutlinedButton.icon(
-            onPressed: onSettings,
-            icon: const Icon(Icons.settings_outlined),
-            label: const Text('Settings & privacy')),
-      ]);
-
-  Widget _stat(String value, String label, Color color) => Container(
-      padding: const EdgeInsets.all(17),
-      decoration:
-          BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(value,
-            style: const TextStyle(
-                fontSize: 30, fontWeight: FontWeight.w900, letterSpacing: -1)),
-        const SizedBox(height: 2),
-        Text(label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700))
-      ]));
-
-  Widget _badge(
-          String title, String description, bool unlocked, Color accent) =>
-      Container(
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(19)),
-          child: Row(children: [
-            Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                    color: accent, borderRadius: BorderRadius.circular(15)),
-                child: Icon(
-                    unlocked ? Icons.stars_rounded : Icons.lock_outline_rounded,
-                    color: ink)),
-            const SizedBox(width: 13),
-            Expanded(
-                child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                  Text(title,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w900, fontSize: 15)),
-                  Text(description,
-                      style: const TextStyle(
-                          color: FloraPalette.muted, fontSize: 12))
-                ])),
-            Text(unlocked ? 'EARNED' : 'LOCKED',
-                style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
-                    color: FloraPalette.muted)),
-          ]));
 }
