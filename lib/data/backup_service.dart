@@ -8,13 +8,16 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import 'game_store.dart';
+import 'app_preferences.dart';
 import 'species.dart';
 
 class BackupPreview {
-  const BackupPreview(this.observationCount, this.photoCount, this.plantCount);
+  const BackupPreview(this.observationCount, this.photoCount, this.plantCount,
+      {this.includesPreferences = false});
   final int observationCount;
   final int photoCount;
   final int plantCount;
+  final bool includesPreferences;
 }
 
 class BackupService {
@@ -59,7 +62,7 @@ class BackupService {
     }
     final backup = {
       'format': 'flora-journal',
-      'version': 2,
+      'version': 3,
       'exported_at': DateTime.now().toUtc().toIso8601String(),
       'plants': [
         for (final row in plants)
@@ -77,6 +80,7 @@ class BackupService {
       'rewards': await db.query('rewards'),
       'achievements': await db.query('achievements'),
       'quest_claims': await db.query('quest_claims'),
+      'preferences': (await AppPreferencesStore.instance.load()).toJson(),
     };
     final bytes = Uint8List.fromList(utf8.encode(jsonEncode(backup)));
     if (bytes.length > 200 * 1024 * 1024) {
@@ -100,7 +104,8 @@ class BackupService {
 
   BackupPreview inspect(Uint8List bytes) {
     final data = _decode(bytes);
-    final isV2 = data['version'] == 2;
+    final isV2 = data['version'] == 2 || data['version'] == 3;
+    if (data['version'] == 3) _preferences(data['preferences']);
     final plantIds = <String>{};
     if (isV2) {
       for (final entry in _list(data, 'plants')) {
@@ -168,7 +173,8 @@ class BackupService {
       _date(item, 'claimed_at');
     }
     return BackupPreview(_list(data, 'observations').length, count,
-        isV2 ? plantIds.length : visitIds.length);
+        isV2 ? plantIds.length : visitIds.length,
+        includesPreferences: data['version'] == 3);
   }
 
   Future<BackupPreview> restore(Uint8List bytes) async {
@@ -183,8 +189,10 @@ class BackupService {
     final newObservations = <Map<String, Object?>>[];
     final newPhotos = <Map<String, Object?>>[];
     final newPlants = <Map<String, Object?>>[];
+    AppPreferences? previousPreferences;
+    var preferencesWritten = false;
     try {
-      if (data['version'] == 2) {
+      if (data['version'] == 2 || data['version'] == 3) {
         for (final entry in _list(data, 'plants')) {
           final row = _map(entry);
           newPlants.add({
@@ -201,7 +209,7 @@ class BackupService {
         final row = _map(entry);
         final id = _string(row, 'id');
         final plantId =
-            data['version'] == 2 ? _string(row, 'plant_id') : const Uuid().v4();
+            data['version'] != 1 ? _string(row, 'plant_id') : const Uuid().v4();
         if (data['version'] == 1) {
           newPlants.add({
             'id': plantId,
@@ -246,6 +254,12 @@ class BackupService {
           await db.query('observations', columns: ['image_path']);
       final oldPhotos =
           await db.query('observation_photos', columns: ['image_path']);
+      if (data['version'] == 3) {
+        previousPreferences = await AppPreferencesStore.instance.load();
+        await AppPreferencesStore.instance
+            .save(_preferences(data['preferences']));
+        preferencesWritten = true;
+      }
       await db.transaction((txn) async {
         for (final table in [
           'observation_photos',
@@ -294,6 +308,11 @@ class BackupService {
       }
       return preview;
     } catch (_) {
+      if (preferencesWritten && previousPreferences != null) {
+        try {
+          await AppPreferencesStore.instance.save(previousPreferences);
+        } catch (_) {}
+      }
       if (await directory.exists()) await directory.delete(recursive: true);
       rethrow;
     }
@@ -306,7 +325,9 @@ class BackupService {
     final decoded = jsonDecode(utf8.decode(bytes));
     final data = _map(decoded);
     if (data['format'] != 'flora-journal' ||
-        (data['version'] != 1 && data['version'] != 2)) {
+        (data['version'] != 1 &&
+            data['version'] != 2 &&
+            data['version'] != 3)) {
       throw const FormatException('This is not a supported FLORA backup.');
     }
     return data;
@@ -317,6 +338,21 @@ class BackupService {
       throw const FormatException('Invalid backup structure.');
     }
     return value;
+  }
+
+  AppPreferences _preferences(Object? value) {
+    final row = _map(value);
+    final name = row['display_name'];
+    final avatar = row['avatar'];
+    if (name is! String ||
+        name.length > 40 ||
+        avatar is! String ||
+        avatar.length > 40 ||
+        row['large_text'] is! bool ||
+        row['reduced_motion'] is! bool) {
+      throw const FormatException('Invalid profile preferences in backup.');
+    }
+    return AppPreferences.fromJson(row);
   }
 
   List<dynamic> _list(Map<String, dynamic> row, String key) {

@@ -61,6 +61,11 @@ class _FloraAppState extends State<FloraApp> {
     if (mounted) setState(() => preferences = next);
   }
 
+  Future<void> refreshRestoredData() async {
+    await refresh();
+    await loadPreferences();
+  }
+
   Future<void> clearLocalData() async {
     await GameStore.instance.clearAllData();
     await AppPreferencesStore.instance.save(const AppPreferences());
@@ -456,7 +461,7 @@ class _FloraAppState extends State<FloraApp> {
               state: state,
               preferences: preferences,
               onPreferencesChanged: updatePreferences,
-              onRestored: refresh,
+              onRestored: refreshRestoredData,
               onJournal: () => setState(() => tab = 1),
               onSettings: () => navigatorKey.currentState!.push(
                   MaterialPageRoute(
@@ -464,7 +469,7 @@ class _FloraAppState extends State<FloraApp> {
                           state: state,
                           preferences: preferences,
                           onPreferencesChanged: updatePreferences,
-                          onDataChanged: refresh,
+                          onDataChanged: refreshRestoredData,
                           onClearData: clearLocalData)))),
         ];
         return Scaffold(

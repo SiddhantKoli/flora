@@ -71,6 +71,24 @@ void main() {
     expect(preview.observationCount, 1);
   });
 
+  test('profile preferences are included in version 3 previews', () {
+    final data =
+        jsonDecode(utf8.decode(backup(v2: true))) as Map<String, dynamic>;
+    data['version'] = 3;
+    data['preferences'] = {
+      'display_name': 'Siddhant',
+      'avatar': 'leaf',
+      'large_text': true,
+      'reduced_motion': false,
+    };
+    final bytes = Uint8List.fromList(utf8.encode(jsonEncode(data)));
+    expect(BackupService.instance.inspect(bytes).includesPreferences, isTrue);
+    (data['preferences'] as Map<String, dynamic>)['large_text'] = 'yes';
+    final invalid = Uint8List.fromList(utf8.encode(jsonEncode(data)));
+    expect(
+        () => BackupService.instance.inspect(invalid), throwsFormatException);
+  });
+
   test('backup inspection rejects damaged photo bytes', () {
     expect(() => BackupService.instance.inspect(backup(damaged: true)),
         throwsFormatException);

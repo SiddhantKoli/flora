@@ -56,7 +56,7 @@ class _BackupPageState extends State<BackupPage> {
           builder: (dialogContext) => AlertDialog(
                 title: const Text('Replace your current journal?'),
                 content: Text(
-                    'This backup has ${preview.plantCount} plants, ${preview.observationCount} visits, and ${preview.photoCount} photos. Your $currentCount current visits, photos, and progress will be replaced. Export your current journal first if you want to keep it.'),
+                    'This backup has ${preview.plantCount} plants, ${preview.observationCount} visits, and ${preview.photoCount} photos. Your $currentCount current visits, photos, and progress will be replaced.${preview.includesPreferences ? ' Your profile name, icon, and accessibility settings will also be replaced.' : ''} Export your current journal first if you want to keep it.'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(dialogContext, false),
@@ -113,7 +113,7 @@ class _BackupPageState extends State<BackupPage> {
                                 FloraType.title.copyWith(color: Colors.white)),
                         const SizedBox(height: 6),
                         const Text(
-                            'Save one FLORA backup file with your entries, photos, and progress.',
+                            'Save one FLORA backup file with your entries, photos, progress, profile, and accessibility settings.',
                             style: TextStyle(color: Colors.white70)),
                         const SizedBox(height: 16),
                         FilledButton(
