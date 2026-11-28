@@ -125,7 +125,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   leading: Icon(Icons.lock_outline_rounded),
                   title: Text('Stored on this phone'),
                   subtitle: Text(
-                      'Your photos, plant names, notes, and progress stay in local app storage. FLORA has no account or cloud sync. Uninstalling can remove this data.')),
+                      'Your journal photos, names, notes, and progress stay in local app storage. If you request plant suggestions, that one original photo is sent to Pl@ntNet through FLORA’s proxy. There is no account or cloud journal sync. Uninstalling can remove local data.')),
               const ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.location_off_outlined),

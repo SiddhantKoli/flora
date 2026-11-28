@@ -11,6 +11,7 @@ import 'data/personal_plant.dart';
 import 'data/species.dart';
 import 'features/camera/add_plant_camera_screen.dart';
 import 'features/camera/camera_look.dart';
+import 'features/identification/plant_suggestion_service.dart';
 import 'features/journal/personal_journal_page.dart';
 import 'features/plantdex/explore_page.dart';
 import 'features/quests/progress_page.dart';
@@ -131,14 +132,15 @@ class _FloraAppState extends State<FloraApp> {
                                 'Photos are captured in the app; gallery imports are unavailable.')),
                         const ListTile(
                             leading: Icon(Icons.edit_outlined),
-                            title: Text('Choose a name, or Unknown'),
+                            title:
+                                Text('Check a suggestion, or choose Unknown'),
                             subtitle: Text(
-                                'FLORA does not identify plants. You can correct a name later.')),
+                                'When connected, the model can suggest names. You choose what to save and can correct it later.')),
                         const ListTile(
                             leading: Icon(Icons.phone_android_outlined),
                             title: Text('Keep your finds on this phone'),
                             subtitle: Text(
-                                'Photos and progress stay on your device. Export a backup before changing phones.')),
+                                'Your journal stays on this device. A photo is sent for suggestions only when you ask. Export a backup before changing phones.')),
                         const SizedBox(height: 18),
                         FilledButton(
                             onPressed: () => Navigator.pop(sheetContext, true),
@@ -493,6 +495,12 @@ class _ReviewPageState extends State<ReviewPage> {
   bool saving = false;
   String? saveError;
   String search = '';
+  final suggestionService = const PlantSuggestionService();
+  bool suggestionLoading = false;
+  String? suggestionError;
+  List<PlantSuggestion> suggestions = const [];
+  String? chosenSuggestion;
+  int photoEpoch = 0;
   final notes = TextEditingController();
   final customName = TextEditingController();
   final nickname = TextEditingController();
@@ -558,8 +566,61 @@ class _ReviewPageState extends State<ReviewPage> {
     if (next == null || !mounted) return;
     setState(() {
       photo = next;
+      photoEpoch++;
       showOriginal = false;
       saveError = null;
+      suggestions = const [];
+      chosenSuggestion = null;
+      suggestionError = null;
+      suggestionLoading = false;
+    });
+  }
+
+  Future<void> findSuggestions() async {
+    if (suggestionLoading) return;
+    final epoch = photoEpoch;
+    setState(() {
+      suggestionLoading = true;
+      suggestionError = null;
+      suggestions = const [];
+    });
+    try {
+      final found = await suggestionService.suggest(photo.originalPath);
+      if (!mounted || epoch != photoEpoch) return;
+      setState(() {
+        suggestions = found;
+        if (found.isEmpty)
+          suggestionError =
+              'No useful suggestions came back. You can name this plant yourself.';
+      });
+    } on PlantSuggestionException catch (error) {
+      if (mounted && epoch == photoEpoch) {
+        setState(() => suggestionError = error.message);
+      }
+    } finally {
+      if (mounted && epoch == photoEpoch) {
+        setState(() => suggestionLoading = false);
+      }
+    }
+  }
+
+  void chooseSuggestion(PlantSuggestion suggestion) {
+    Species? catalogMatch;
+    for (final species in seedSpecies) {
+      if (species.scientificName.toLowerCase() ==
+          suggestion.scientificName.toLowerCase()) {
+        catalogMatch = species;
+        break;
+      }
+    }
+    setState(() {
+      selectedId = catalogMatch?.id;
+      chosenSuggestion = suggestion.scientificName;
+      customName.text = catalogMatch == null
+          ? suggestion.displayName
+              .substring(0, suggestion.displayName.length.clamp(0, 80))
+          : '';
+      suggestionError = null;
     });
   }
 
@@ -641,9 +702,96 @@ class _ReviewPageState extends State<ReviewPage> {
                 const Text('Look familiar?', style: FloraType.display),
                 const SizedBox(height: 6),
                 Text(
-                    'FLORA does not identify plants yet. Choose one only if you recognize it, or save this photo as unknown.',
+                    'Get a possible match, then check it yourself. You can always name the plant or save it as unknown.',
                     style: FloraType.body.copyWith(color: FloraPalette.muted)),
                 const SizedBox(height: 18),
+                if (suggestionService.isConfigured) ...[
+                  Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          color: FloraPalette.mint,
+                          borderRadius: BorderRadius.circular(12)),
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('ASK THE PLANT MODEL',
+                                style: FloraType.caption),
+                            const SizedBox(height: 6),
+                            Text('Possible matches from your photo',
+                                style: FloraType.title.copyWith(fontSize: 21)),
+                            const SizedBox(height: 6),
+                            const Text(
+                                'Only if you tap below, FLORA sends the original photo to Pl@ntNet for suggestions. Your journal copy stays on this phone.',
+                                style: FloraType.body),
+                            const SizedBox(height: 12),
+                            FilledButton.icon(
+                                onPressed:
+                                    suggestionLoading ? null : findSuggestions,
+                                icon: suggestionLoading
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                            strokeWidth: 2))
+                                    : const Icon(Icons.auto_awesome_rounded),
+                                label: Text(suggestionLoading
+                                    ? 'Looking for matches…'
+                                    : 'Find plant suggestions')),
+                            const SizedBox(height: 4),
+                            const Text(
+                                'Powered by Pl@ntNet · Requires internet',
+                                style: FloraType.caption),
+                          ])),
+                  const SizedBox(height: 14),
+                ],
+                if (suggestionError != null) ...[
+                  Text(suggestionError!,
+                      style:
+                          FloraType.body.copyWith(color: FloraPalette.muted)),
+                  const SizedBox(height: 14),
+                ],
+                if (suggestions.isNotEmpty) ...[
+                  const Text('POSSIBLE MATCHES', style: FloraType.caption),
+                  const SizedBox(height: 7),
+                  ...suggestions.map((suggestion) => ListTile(
+                        selected: chosenSuggestion == suggestion.scientificName,
+                        selectedTileColor: FloraPalette.mint,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8)),
+                        contentPadding:
+                            const EdgeInsets.symmetric(horizontal: 10),
+                        title: Text(suggestion.displayName),
+                        subtitle: Text(suggestion.scientificName),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text('${(suggestion.score * 100).round()}%',
+                                style: FloraType.caption
+                                    .copyWith(color: FloraPalette.signal)),
+                            if (chosenSuggestion == suggestion.scientificName)
+                              const Icon(Icons.check_circle,
+                                  color: FloraPalette.signal, size: 18),
+                          ],
+                        ),
+                        onTap: () => chooseSuggestion(suggestion),
+                      )),
+                  const Text(
+                      'Scores rank model guesses; they are not proof. Check the plant before relying on a name.',
+                      style: FloraType.caption),
+                  TextButton(
+                    onPressed: () => setState(() {
+                      suggestions = const [];
+                      if (chosenSuggestion != null) {
+                        selectedId = null;
+                        customName.clear();
+                      }
+                      chosenSuggestion = null;
+                    }),
+                    child: const Text('None of these'),
+                  ),
+                  const Divider(),
+                ],
                 TextField(
                     onChanged: (value) => setState(() => search = value),
                     decoration: const InputDecoration(
@@ -661,13 +809,16 @@ class _ReviewPageState extends State<ReviewPage> {
                 TextField(
                     controller: customName,
                     maxLength: 80,
-                    onChanged: (_) => setState(() => selectedId = null),
+                    onChanged: (_) => setState(() {
+                          selectedId = null;
+                          chosenSuggestion = null;
+                        }),
                     decoration: const InputDecoration(
                         labelText: 'Or write your own plant name',
                         hintText: 'Your unverified label')),
                 const SizedBox(height: 4),
                 const Text(
-                    'A name you enter yourself stays a personal label, not a verified identification.',
+                    'Names outside the sample catalog stay personal labels, even when a model suggested them.',
                     style: TextStyle(color: FloraPalette.muted, fontSize: 13)),
                 const SizedBox(height: 14),
                 TextField(
@@ -746,6 +897,7 @@ class _ReviewPageState extends State<ReviewPage> {
         child: InkWell(
           onTap: () => setState(() {
             selectedId = species.id;
+            chosenSuggestion = null;
             customName.clear();
           }),
           borderRadius: BorderRadius.circular(8),

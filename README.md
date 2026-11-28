@@ -1,6 +1,6 @@
 # FLORA
 
-FLORA is an Android-first Flutter prototype for keeping a personal journal of plants you notice. It runs in guest mode and stores photos, notes, and game progress locally on the device.
+FLORA is an Android-first Flutter prototype for keeping a personal journal of plants you notice. It runs in guest mode and stores journal photos, notes, and game progress locally on the device. When the optional cloud suggestion service is configured, you can send a captured photo to Pl@ntNet for possible names.
 
 ## Run locally
 
@@ -11,10 +11,12 @@ flutter pub get
 flutter run
 ```
 
+Plant suggestions require a deployed proxy and an API key. See [cloud/plant-suggestions/README.md](cloud/plant-suggestions/README.md). Without it, the manual naming and Unknown flows continue to work.
+
 ## What the app currently does
 
 - Opens on **Explore**, a photo-led Plantdex, with a center **Add a plant** camera action. New observations require a photo taken in FLORA; gallery imports are unavailable. Field Cam has a square live viewfinder, front/rear switching, five subtle digicam-inspired looks, and a shutter. The square frame is only a preview; captures keep their full aspect ratio.
-- Shows the selected photo for review. You can retake it, search the small sample catalog and manually choose a plant, give it your own unverified name, or save it as unknown. An optional nickname, place label, and field note make the entry personal. The place label is typed by the user; FLORA does not record GPS. When a camera look is applied, review lets you save the edited copy or the original. If saving fails or the photo is a duplicate, review stays open with a visible recovery message.
+- Shows the selected photo for review. If the cloud service is configured, tapping **Find plant suggestions** sends the original capture to Pl@ntNet and shows ranked possible names with model scores. You must choose a suggestion; FLORA never silently labels a plant. You can also retake, search the small sample catalog, write your own unverified name, or save as Unknown. An optional nickname, place label, and field note make the entry personal. The place label is typed by the user; FLORA does not record GPS. When a camera look is applied, review lets you save the edited copy or the original. If saving fails or the photo is a duplicate, review stays open with a visible recovery message.
 - On first run, explains camera capture, manual naming, and local storage, with a direct path to the first plant. A save confirmation shows the earned XP or saved count and can open the exact saved entry.
 - Groups dated visits around each personal plant in a photo-led Journal. You can revisit the same plant with a new in-app camera photo, search names, places, and notes, filter unknown plants, edit its name/nickname/place, and review its timeline. Each visit can hold extra in-app photos, a note, and a zoomable photo view. You can edit a visit note or delete a visit; deleting the last visit also removes its plant page. Name corrections apply to all visits for that plant and update the Plantdex without awarding XP again. Earned XP remains after deleting a visit.
 - Tracks first discoveries, capped repeat XP, daily and weekly quest progress and claims, and two achievement milestones.
@@ -23,14 +25,14 @@ flutter run
 - Provides Settings for larger text, reduced motion, camera permission guidance, local privacy details, backup access, and a confirmed delete-all-local-data action.
 - Uses an adaptive Android launcher icon and a custom launch screen.
 
-Plant selection is user-provided. FLORA does **not** identify plants from photos, recommend a match, or provide an identification confidence score. The sample catalog contains eight illustrative entries; it is not a reviewed or complete botanical reference. Treat selected names as personal labels, not verified identifications. Do not use FLORA to decide whether a plant is safe to eat, touch, or use as medicine.
+Plant names are confirmed by the user. Pl@ntNet suggestions are model guesses, not verified identifications; their scores are useful for ranking, not proof. The sample catalog contains eight illustrative entries and is not a reviewed or complete botanical reference. Do not use FLORA to decide whether a plant is safe to eat, touch, or use as medicine.
 
 ## What is missing
 
 - A deeper multi-step onboarding and a guided first observation walkthrough.
 - Profile and accessibility settings in the backup format, plus a fuller first-plant walkthrough.
 - A larger, botanically reviewed catalog with distinct, rights-cleared images or artwork for every entry.
-- Automatic photo identification, suggested matches, confidence values, and expert verification.
+- A deployed Pl@ntNet proxy is needed for live suggestions. There is no automatic naming, expert verification, or guarantee that a suggested species is correct.
 - Cloud backup and account sign-in. Exporting and restoring a local backup file can transfer data, but unsaved local data may be lost on uninstall or device loss.
 - Social features, notifications, and a more developed progression and reward system.
 
