@@ -11,6 +11,7 @@ coverage/
 .vscode/
 .toolchains/
 .dev.vars*
+cloud/plant-suggestions/.wrangler/
 android/.gradle/
 android/local.properties
 ios/Flutter/Generated.xcconfig
