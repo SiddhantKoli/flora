@@ -442,7 +442,22 @@ class _FloraAppState extends State<FloraApp> {
         }
         final state = snapshot!;
         final pages = <Widget>[
-          ExplorePage(state: state, onAddPlant: () => scan()),
+          ExplorePage(
+              state: state,
+              onAddPlant: () => scan(),
+              onJournal: () => setState(() => tab = 1),
+              onOpenPlant: (plant) => navigatorKey.currentState!.push(
+                  MaterialPageRoute(
+                      builder: (_) => PersonalPlantPage(
+                          plantId: plant.id,
+                          onChanged: refresh,
+                          onAddVisit: addVisit,
+                          onOpenVisit: (observation) =>
+                              navigatorKey.currentState!.push(MaterialPageRoute(
+                                  builder: (_) => ObservationDetail(
+                                      observation: observation,
+                                      onChanged: refresh,
+                                      plantName: plant.displayName))))))),
           PersonalJournalPage(
               state: state,
               onChanged: refresh,

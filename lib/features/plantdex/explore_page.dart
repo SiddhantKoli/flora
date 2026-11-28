@@ -1,14 +1,24 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 import '../../data/game_store.dart';
+import '../../data/personal_plant.dart';
 import '../../data/species.dart';
 import '../../ui/flora_design.dart';
 
 class ExplorePage extends StatefulWidget {
-  const ExplorePage({super.key, required this.state, required this.onAddPlant});
+  const ExplorePage(
+      {super.key,
+      required this.state,
+      required this.onAddPlant,
+      required this.onOpenPlant,
+      required this.onJournal});
   final GameSnapshot state;
   final VoidCallback onAddPlant;
+  final ValueChanged<PersonalPlant> onOpenPlant;
+  final VoidCallback onJournal;
 
   @override
   State<ExplorePage> createState() => _ExplorePageState();
@@ -27,7 +37,12 @@ class _ExplorePageState extends State<ExplorePage> {
       return '${species.commonName} ${species.scientificName} ${species.family}'
           .toLowerCase()
           .contains(search.trim().toLowerCase());
-    }).toList();
+    }).toList()
+      ..sort((a, b) {
+        final aSeen = widget.state.unlockedIds.contains(a.id);
+        final bSeen = widget.state.unlockedIds.contains(b.id);
+        return aSeen == bSeen ? 0 : (aSeen ? -1 : 1);
+      });
     return CustomScrollView(slivers: [
       SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
@@ -44,8 +59,7 @@ class _ExplorePageState extends State<ExplorePage> {
               const Icon(Icons.circle, size: 8, color: FloraPalette.coral),
               const Spacer(),
               Text(
-                  '${widget.state.unlockedIds.length.toString().padLeft(2, '0')} / '
-                  '${seedSpecies.length.toString().padLeft(2, '0')} seen',
+                  '${widget.state.plants.length} ${widget.state.plants.length == 1 ? 'plant' : 'plants'} in your journal',
                   style: FloraType.caption.copyWith(color: FloraPalette.ink)),
             ]),
             const SizedBox(height: 32),
@@ -59,11 +73,89 @@ class _ExplorePageState extends State<ExplorePage> {
                 onAddPlant: widget.onAddPlant, reduceMotion: reduceMotion),
             const SizedBox(height: 34),
             Row(children: [
+              Expanded(child: Text('Your finds', style: FloraType.title)),
+              TextButton(
+                  onPressed: widget.onJournal, child: const Text('See all')),
+            ]),
+            const SizedBox(height: 10),
+            if (widget.state.plants.isEmpty)
+              Card(
+                  child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Your first plant goes here.',
+                          style: FloraType.title),
+                      const SizedBox(height: 8),
+                      Text('Take a photo to start your own Plantdex.',
+                          style: FloraType.body
+                              .copyWith(color: FloraPalette.muted)),
+                      const SizedBox(height: 14),
+                      FilledButton(
+                          onPressed: widget.onAddPlant,
+                          child: const Text('Add a plant')),
+                    ]),
+              ))
+            else
+              SizedBox(
+                  height: 170,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.state.plants.length.clamp(0, 8),
+                    separatorBuilder: (_, __) => const SizedBox(width: 10),
+                    itemBuilder: (context, index) {
+                      final plant = widget.state.plants[index];
+                      return SizedBox(
+                          width: 132,
+                          child: Material(
+                            color: FloraPalette.surface,
+                            borderRadius: BorderRadius.circular(15),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              onTap: () => widget.onOpenPlant(plant),
+                              child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                        child: SizedBox(
+                                            width: double.infinity,
+                                            child: plant.latestVisit == null
+                                                ? const ColoredBox(
+                                                    color: FloraPalette.mint,
+                                                    child: Icon(
+                                                        Icons.spa_outlined))
+                                                : Image.file(
+                                                    File(plant.latestVisit!
+                                                        .imagePath),
+                                                    fit: BoxFit.cover,
+                                                    errorBuilder: (_, __,
+                                                            ___) =>
+                                                        const ColoredBox(
+                                                            color: FloraPalette
+                                                                .mint,
+                                                            child: Icon(Icons
+                                                                .broken_image_outlined))))),
+                                    Padding(
+                                        padding: const EdgeInsets.all(9),
+                                        child: Text(plant.displayName,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: FloraType.caption.copyWith(
+                                                color: FloraPalette.ink))),
+                                  ]),
+                            ),
+                          ));
+                    },
+                  )),
+            const SizedBox(height: 34),
+            Row(children: [
               Expanded(child: Text('The field guide', style: FloraType.title)),
               Text('${matches.length} entries', style: FloraType.caption),
             ]),
             const SizedBox(height: 6),
-            Text('A small sample catalog. Names are selected by you.',
+            Text(
+                'Eight sample plants to browse. Your own finds appear above, even when they are not in this guide.',
                 style: FloraType.body
                     .copyWith(color: FloraPalette.muted, fontSize: 13)),
             const SizedBox(height: 20),
